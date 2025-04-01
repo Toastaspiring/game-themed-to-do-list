@@ -1,13 +1,34 @@
-// Update this page (the content is just a fallback if you fail to update the page)
 
-const Index = () => {
+import React from 'react';
+import { TaskProvider } from '@/contexts/TaskContext';
+import Header from '@/components/Header';
+import TaskList from '@/components/TaskList';
+import TaskForm from '@/components/TaskForm';
+import AchievementList from '@/components/AchievementList';
+
+const Index: React.FC = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <TaskProvider>
+      <div className="min-h-screen bg-game-background text-game-text">
+        <Header />
+        
+        <main className="max-w-4xl mx-auto px-4 pb-16">
+          <div className="mb-8">
+            <AchievementList />
+          </div>
+          
+          <div>
+            <h2 className="text-xl font-bold mb-4 text-game-accent">Tasks</h2>
+            <TaskForm />
+            <TaskList />
+          </div>
+        </main>
+        
+        <footer className="text-center py-4 text-xs text-game-text-muted">
+          <p>Nostalgic Achievement Gardens &copy; {new Date().getFullYear()}</p>
+        </footer>
       </div>
-    </div>
+    </TaskProvider>
   );
 };
 
