@@ -53,12 +53,12 @@ const TaskForm: React.FC = () => {
       if (user) {
         const { error } = await supabase
           .from('tasks')
-          .insert([{
+          .insert({
             title: newTask.title,
             category: newTask.category,
             icon: newTask.icon,
             user_id: user.id
-          }]);
+          });
 
         if (error) throw error;
       }
