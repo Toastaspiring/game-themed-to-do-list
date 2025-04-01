@@ -2,7 +2,7 @@
 import React from 'react';
 import { useTaskContext } from '@/contexts/TaskContext';
 import { Task } from '@/data/defaultTasks';
-import { Check, Trash2 } from 'lucide-react';
+import { Check, Trash2, Flame } from 'lucide-react';
 import * as Icons from 'lucide-react';
 
 // Dynamic icon component
