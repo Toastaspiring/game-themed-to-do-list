@@ -164,16 +164,26 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           toast({
             title: "Streak Started!",
             description: "Keep completing all daily tasks to build your streak!",
+            duration: 3000, // Set to 3 seconds
           });
         } else {
           toast({
             title: "Streak Increased!",
             description: `You're on a ${newStreak} day streak! Keep it up!`,
+            duration: 3000, // Set to 3 seconds
           });
         }
         
         if (newStreak >= 7) {
           updateAchievement('achievement-4');
+        }
+        
+        if (newStreak >= 14) {
+          updateAchievement('achievement-6');
+        }
+        
+        if (newStreak >= 30) {
+          updateAchievement('achievement-7');
         }
       }
     }
