@@ -30,7 +30,7 @@ const BadgeUnlockAnimation: React.FC<BadgeUnlockAnimationProps> = ({
   
   if (!achievement) return null;
   
-  // Fix here: Proper type handling for dynamic icons
+  // Get the correct icon component
   const LucideIcon = achievement.icon in Icons 
     ? (Icons[achievement.icon as keyof typeof Icons] as React.ElementType) 
     : Icons.Award;
