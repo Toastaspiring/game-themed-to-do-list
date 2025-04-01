@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { defaultTasks, Task } from '../data/defaultTasks';
 import { achievements, Achievement } from '../data/achievements';
@@ -45,6 +46,20 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (lastLogin !== today) {
       resetDailyTasks();
+      
+      // Reset streak to 0 if a day was skipped
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toDateString();
+      
+      if (lastLogin !== yesterdayStr && streak > 0) {
+        setStreak(0);
+        toast({
+          title: "Streak Reset",
+          description: "You missed a day! Your streak has been reset.",
+        });
+      }
+      
       localStorage.setItem(LOCAL_STORAGE_LAST_LOGIN_KEY, today);
     }
   }, []);
@@ -118,18 +133,48 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (tasks.find(task => task.id === taskId)?.completed === false) {
       checkCompletionAchievements();
       
-      const completedToday = tasks.some(task => 
-        task.completed && 
-        task.completedAt && 
-        new Date(task.completedAt).toDateString() === today
-      );
+      // Check if all daily tasks are completed
+      const updatedTasks = [...tasks];
+      updatedTasks.find(t => t.id === taskId)!.completed = true; // Simulate the task being completed
       
-      if (!completedToday) {
-        updateStreak();
-      }
+      checkAllDailyTasksCompletion(updatedTasks);
       
       if (now.getHours() < 8) {
         updateAchievement('achievement-5');
+      }
+    }
+  };
+
+  const checkAllDailyTasksCompletion = (currentTasks: Task[]) => {
+    const dailyTasks = currentTasks.filter(task => task.category === 'daily');
+    
+    if (dailyTasks.length > 0 && dailyTasks.every(task => task.completed)) {
+      // All daily tasks are completed, update the streak
+      const today = new Date().toDateString();
+      const lastLogin = localStorage.getItem(LOCAL_STORAGE_LAST_LOGIN_KEY);
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toDateString();
+      
+      if (lastLogin === yesterdayStr || lastLogin === today) {
+        const newStreak = streak + 1;
+        setStreak(newStreak);
+        
+        if (newStreak === 1) {
+          toast({
+            title: "Streak Started!",
+            description: "Keep completing all daily tasks to build your streak!",
+          });
+        } else {
+          toast({
+            title: "Streak Increased!",
+            description: `You're on a ${newStreak} day streak! Keep it up!`,
+          });
+        }
+        
+        if (newStreak >= 7) {
+          updateAchievement('achievement-4');
+        }
       }
     }
   };
@@ -145,27 +190,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return task;
     }));
-  };
-
-  const updateStreak = () => {
-    const lastLogin = localStorage.getItem(LOCAL_STORAGE_LAST_LOGIN_KEY);
-    const today = new Date().toDateString();
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toDateString();
-    
-    if (lastLogin === yesterdayStr) {
-      const newStreak = streak + 1;
-      setStreak(newStreak);
-      
-      if (newStreak >= 7) {
-        updateAchievement('achievement-4');
-      }
-    } else if (lastLogin !== today) {
-      setStreak(1);
-    }
-    
-    localStorage.setItem(LOCAL_STORAGE_LAST_LOGIN_KEY, today);
   };
 
   const checkCompletionAchievements = () => {
