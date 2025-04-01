@@ -57,6 +57,12 @@
     image-rendering: pixelated;
   }
 
+  .achievement-badge-large {
+    @apply w-24 h-24 bg-game-secondary text-game-background flex items-center justify-center 
+      rounded-lg font-bold text-2xl shadow-lg;
+    image-rendering: pixelated;
+  }
+
   .pixel-progress {
     @apply h-4 bg-gray-700 rounded-none overflow-hidden border border-gray-600;
     image-rendering: pixelated;

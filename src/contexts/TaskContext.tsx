@@ -1,8 +1,8 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { defaultTasks, Task } from '../data/defaultTasks';
 import { achievements, Achievement } from '../data/achievements';
 import { toast } from '@/hooks/use-toast';
+import BadgeUnlockAnimation from '@/components/BadgeUnlockAnimation';
 
 interface TaskContextProps {
   tasks: Task[];
@@ -37,8 +37,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return storedStreak ? parseInt(storedStreak) : 0;
   });
 
+  const [unlockedAchievement, setUnlockedAchievement] = useState<Achievement | null>(null);
+
   useEffect(() => {
-    // Check if it's a new day and reset daily tasks
     const lastLogin = localStorage.getItem(LOCAL_STORAGE_LAST_LOGIN_KEY);
     const today = new Date().toDateString();
     
@@ -98,7 +99,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         completedAt: isCompleting ? now.toISOString() : undefined
       };
       
-      // Handle streaks for daily tasks
       if (task.category === 'daily' && isCompleting) {
         const lastCompleted = task.lastCompleted ? new Date(task.lastCompleted).toDateString() : null;
         const isConsecutiveDay = lastCompleted && 
@@ -107,7 +107,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updatedTask.streak = isConsecutiveDay ? (task.streak || 0) + 1 : 1;
         updatedTask.lastCompleted = today;
         
-        // Check for streak achievements
         if (updatedTask.streak === 3) {
           updateAchievement('achievement-2');
         }
@@ -117,10 +116,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
     
     if (tasks.find(task => task.id === taskId)?.completed === false) {
-      // Check for task completion achievements
       checkCompletionAchievements();
       
-      // Check if this is the first task completed today
       const completedToday = tasks.some(task => 
         task.completed && 
         task.completedAt && 
@@ -131,7 +128,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateStreak();
       }
       
-      // Check for early riser achievement
       if (now.getHours() < 8) {
         updateAchievement('achievement-5');
       }
@@ -162,12 +158,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const newStreak = streak + 1;
       setStreak(newStreak);
       
-      // Check for streak achievements
       if (newStreak >= 7) {
         updateAchievement('achievement-4');
       }
     } else if (lastLogin !== today) {
-      // Reset streak if not consecutive days
       setStreak(1);
     }
     
@@ -175,23 +169,20 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const checkCompletionAchievements = () => {
-    // Count completed tasks
-    const completedCount = tasks.filter(task => task.completed).length + 1; // +1 for the current task
+    const completedCount = tasks.filter(task => task.completed).length + 1;
     
-    // First task completed
     if (completedCount === 1) {
       updateAchievement('achievement-1');
     }
     
-    // 10 tasks completed
     if (completedCount === 10) {
       updateAchievement('achievement-3');
     }
   };
 
   const updateAchievement = (achievementId: string) => {
-    setAchievements(prevAchievements => 
-      prevAchievements.map(achievement => {
+    setAchievements(prevAchievements => {
+      const updatedAchievements = prevAchievements.map(achievement => {
         if (achievement.id === achievementId && !achievement.unlocked) {
           const updatedAchievement = {
             ...achievement,
@@ -199,7 +190,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
             unlockedAt: new Date().toISOString()
           };
           
-          // Show achievement toast
+          setUnlockedAchievement(updatedAchievement);
+          
           toast({
             title: "Achievement Unlocked!",
             description: `${updatedAchievement.title}: ${updatedAchievement.description}`,
@@ -207,15 +199,20 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           return updatedAchievement;
         } else if (achievement.id === achievementId) {
-          // Update progress if already exists
           return {
             ...achievement,
             progress: achievement.progress ? achievement.progress + 1 : 1
           };
         }
         return achievement;
-      })
-    );
+      });
+      
+      return updatedAchievements;
+    });
+  };
+
+  const handleAnimationComplete = () => {
+    setUnlockedAchievement(null);
   };
 
   const value = {
@@ -228,7 +225,17 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     deleteTask
   };
 
-  return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
+  return (
+    <TaskContext.Provider value={value}>
+      {children}
+      {unlockedAchievement && (
+        <BadgeUnlockAnimation 
+          achievement={unlockedAchievement} 
+          onComplete={handleAnimationComplete} 
+        />
+      )}
+    </TaskContext.Provider>
+  );
 };
 
 export const useTaskContext = () => {
