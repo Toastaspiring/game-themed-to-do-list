@@ -1,7 +1,9 @@
 
 import React, { useState } from 'react';
 import { useTaskContext } from '@/contexts/TaskContext';
-import { Plus } from 'lucide-react';
+import { Plus, Lock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 const TaskForm: React.FC = () => {
   const { addTask } = useTaskContext();
@@ -10,6 +12,9 @@ const TaskForm: React.FC = () => {
     title: '',
     category: 'custom' as 'daily' | 'goal' | 'custom'
   });
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,15 +34,33 @@ const TaskForm: React.FC = () => {
     setIsExpanded(false);
   };
 
+  const handleAddTaskClick = () => {
+    if (!isLoggedIn) {
+      toast({
+        title: "Login Required",
+        description: "Please login to add custom tasks.",
+        duration: 4000,
+      });
+      navigate('/login');
+      return;
+    }
+    
+    setIsExpanded(true);
+  };
+
   return (
     <div className="mb-8">
       {!isExpanded ? (
         <button
-          onClick={() => setIsExpanded(true)}
+          onClick={handleAddTaskClick}
           className="w-full py-3 px-4 rounded-lg pixel-border border-game-accent bg-game-background hover:bg-opacity-80 transition-colors text-left flex items-center"
         >
-          <Plus size={20} className="mr-2 text-game-accent" />
-          <span>Add new task...</span>
+          {isLoggedIn ? (
+            <Plus size={20} className="mr-2 text-game-accent" />
+          ) : (
+            <Lock size={20} className="mr-2 text-game-accent" />
+          )}
+          <span>{isLoggedIn ? 'Add new task...' : 'Login to add tasks...'}</span>
         </button>
       ) : (
         <form onSubmit={handleSubmit} className="bg-game-background rounded-lg p-4 pixel-border border-game-accent animate-pixel-fade-in">
