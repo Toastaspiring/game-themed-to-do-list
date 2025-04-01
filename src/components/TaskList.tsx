@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '@/contexts/TaskContext';
 import TaskItem from './TaskItem';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,11 +8,16 @@ import { Calendar, Target, ListTodo } from 'lucide-react';
 const TaskList: React.FC = () => {
   const { tasks } = useTaskContext();
   const [activeTab, setActiveTab] = useState<string>('all');
+  const [filteredTasks, setFilteredTasks] = useState(tasks);
 
-  const filteredTasks = tasks.filter(task => {
-    if (activeTab === 'all') return true;
-    return task.category === activeTab;
-  });
+  // Update filtered tasks whenever tasks or active tab changes
+  useEffect(() => {
+    const newFilteredTasks = tasks.filter(task => {
+      if (activeTab === 'all') return true;
+      return task.category === activeTab;
+    });
+    setFilteredTasks(newFilteredTasks);
+  }, [tasks, activeTab]);
   
   const completedCount = filteredTasks.filter(t => t.completed).length;
   const totalTasks = filteredTasks.length;
