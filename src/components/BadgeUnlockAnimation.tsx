@@ -18,11 +18,11 @@ const BadgeUnlockAnimation: React.FC<BadgeUnlockAnimationProps> = ({
     if (achievement) {
       setVisible(true);
       
-      // Show animation for 3 seconds, then hide
+      // Show animation for 4 seconds, then hide
       const timer = setTimeout(() => {
         setVisible(false);
         setTimeout(() => onComplete(), 500); // Wait for fade-out animation to complete
-      }, 3000);
+      }, 4000);
       
       return () => clearTimeout(timer);
     }

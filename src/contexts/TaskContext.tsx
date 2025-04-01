@@ -21,6 +21,7 @@ const LOCAL_STORAGE_TASKS_KEY = 'nostalgiaAchievements_tasks';
 const LOCAL_STORAGE_ACHIEVEMENTS_KEY = 'nostalgiaAchievements_achievements';
 const LOCAL_STORAGE_STREAK_KEY = 'nostalgiaAchievements_streak';
 const LOCAL_STORAGE_LAST_LOGIN_KEY = 'nostalgiaAchievements_lastLogin';
+const LOCAL_STORAGE_STREAK_UPDATED_TODAY = 'nostalgiaAchievements_streakUpdatedToday';
 
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>(() => {
@@ -36,6 +37,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [streak, setStreak] = useState<number>(() => {
     const storedStreak = localStorage.getItem(LOCAL_STORAGE_STREAK_KEY);
     return storedStreak ? parseInt(storedStreak) : 0;
+  });
+
+  const [streakUpdatedToday, setStreakUpdatedToday] = useState<boolean>(() => {
+    const updated = localStorage.getItem(LOCAL_STORAGE_STREAK_UPDATED_TODAY);
+    return updated === 'true';
   });
 
   const [unlockedAchievement, setUnlockedAchievement] = useState<Achievement | null>(null);
@@ -57,9 +63,13 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         toast({
           title: "Streak Reset",
           description: "You missed a day! Your streak has been reset.",
+          duration: 4000, // Adjusted to 4 seconds
         });
       }
       
+      // Reset the streak update flag for the new day
+      setStreakUpdatedToday(false);
+      localStorage.setItem(LOCAL_STORAGE_STREAK_UPDATED_TODAY, 'false');
       localStorage.setItem(LOCAL_STORAGE_LAST_LOGIN_KEY, today);
     }
   }, []);
@@ -76,6 +86,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(LOCAL_STORAGE_STREAK_KEY, streak.toString());
   }, [streak]);
 
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_STREAK_UPDATED_TODAY, streakUpdatedToday.toString());
+  }, [streakUpdatedToday]);
+
   const addTask = (task: Omit<Task, 'id' | 'createdAt' | 'completed'>) => {
     const newTask: Task = {
       ...task,
@@ -89,6 +103,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toast({
       title: "New Task Added",
       description: `'${newTask.title}' has been added to your tasks`,
+      duration: 4000, // Adjusted to 4 seconds
     });
   };
 
@@ -97,6 +112,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toast({
       title: "Task Deleted",
       description: "The task has been removed",
+      duration: 4000, // Adjusted to 4 seconds
     });
   };
 
@@ -149,41 +165,44 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const dailyTasks = currentTasks.filter(task => task.category === 'daily');
     
     if (dailyTasks.length > 0 && dailyTasks.every(task => task.completed)) {
-      // All daily tasks are completed, update the streak
-      const today = new Date().toDateString();
-      const lastLogin = localStorage.getItem(LOCAL_STORAGE_LAST_LOGIN_KEY);
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toDateString();
-      
-      if (lastLogin === yesterdayStr || lastLogin === today) {
-        const newStreak = streak + 1;
-        setStreak(newStreak);
+      // All daily tasks are completed, update the streak only if not already updated today
+      if (!streakUpdatedToday) {
+        const today = new Date().toDateString();
+        const lastLogin = localStorage.getItem(LOCAL_STORAGE_LAST_LOGIN_KEY);
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toDateString();
         
-        if (newStreak === 1) {
-          toast({
-            title: "Streak Started!",
-            description: "Keep completing all daily tasks to build your streak!",
-            duration: 3000, // Set to 3 seconds
-          });
-        } else {
-          toast({
-            title: "Streak Increased!",
-            description: `You're on a ${newStreak} day streak! Keep it up!`,
-            duration: 3000, // Set to 3 seconds
-          });
-        }
-        
-        if (newStreak >= 7) {
-          updateAchievement('achievement-4');
-        }
-        
-        if (newStreak >= 14) {
-          updateAchievement('achievement-6');
-        }
-        
-        if (newStreak >= 30) {
-          updateAchievement('achievement-7');
+        if (lastLogin === yesterdayStr || lastLogin === today) {
+          const newStreak = streak + 1;
+          setStreak(newStreak);
+          setStreakUpdatedToday(true);
+          
+          if (newStreak === 1) {
+            toast({
+              title: "Streak Started!",
+              description: "Keep completing all daily tasks to build your streak!",
+              duration: 4000, // Adjusted to 4 seconds
+            });
+          } else {
+            toast({
+              title: "Streak Increased!",
+              description: `You're on a ${newStreak} day streak! Keep it up!`,
+              duration: 4000, // Adjusted to 4 seconds
+            });
+          }
+          
+          if (newStreak >= 7) {
+            updateAchievement('achievement-4');
+          }
+          
+          if (newStreak >= 14) {
+            updateAchievement('achievement-6');
+          }
+          
+          if (newStreak >= 30) {
+            updateAchievement('achievement-7');
+          }
         }
       }
     }
@@ -229,6 +248,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           toast({
             title: "Achievement Unlocked!",
             description: `${updatedAchievement.title}: ${updatedAchievement.description}`,
+            duration: 4000, // Adjusted to 4 seconds
           });
           
           return updatedAchievement;
