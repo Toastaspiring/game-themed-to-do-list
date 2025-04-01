@@ -1,137 +1,144 @@
 
 import React, { useState } from 'react';
 import { useTaskContext } from '@/contexts/TaskContext';
-import { Plus, Lock } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
+import { useForm } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+const taskSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  category: z.enum(['daily', 'goal', 'custom']),
+  icon: z.string().optional()
+});
+
+type TaskFormValues = z.infer<typeof taskSchema>;
 
 const TaskForm: React.FC = () => {
   const { addTask } = useTaskContext();
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [newTask, setNewTask] = useState({
-    title: '',
-    category: 'custom' as 'daily' | 'goal' | 'custom'
-  });
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newTask.title.trim() === '') return;
-    
-    addTask({
-      title: newTask.title,
-      category: newTask.category,
-      streak: 0
-    });
-    
-    setNewTask({
+  const form = useForm<TaskFormValues>({
+    resolver: zodResolver(taskSchema),
+    defaultValues: {
       title: '',
-      category: 'custom'
-    });
-    
-    setIsExpanded(false);
-  };
+      category: 'daily',
+      icon: 'check'
+    }
+  });
 
-  const handleAddTaskClick = () => {
-    if (!isLoggedIn) {
-      toast({
-        title: "Login Required",
-        description: "Please login to add custom tasks.",
-        duration: 4000,
-      });
-      navigate('/login');
+  const onSubmit = async (values: TaskFormValues) => {
+    if (!user) {
+      toast.error("Please log in to add tasks");
       return;
     }
-    
-    setIsExpanded(true);
+
+    setIsLoading(true);
+
+    try {
+      const newTask = {
+        title: values.title,
+        category: values.category,
+        icon: values.icon
+      };
+
+      // If user is logged in, save to Supabase
+      if (user) {
+        const { error } = await supabase
+          .from('tasks')
+          .insert([{
+            title: newTask.title,
+            category: newTask.category,
+            icon: newTask.icon,
+            user_id: user.id
+          }]);
+
+        if (error) throw error;
+      }
+
+      // Add to local state
+      addTask(newTask);
+      
+      // Reset the form
+      form.reset({
+        title: '',
+        category: 'daily',
+        icon: 'check'
+      });
+    } catch (error) {
+      console.error("Error adding task:", error);
+      toast.error("Failed to add task. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="mb-8">
-      {!isExpanded ? (
-        <button
-          onClick={handleAddTaskClick}
-          className="w-full py-3 px-4 rounded-lg pixel-border border-game-accent bg-game-background hover:bg-opacity-80 transition-colors text-left flex items-center"
-        >
-          {isLoggedIn ? (
-            <Plus size={20} className="mr-2 text-game-accent" />
-          ) : (
-            <Lock size={20} className="mr-2 text-game-accent" />
-          )}
-          <span>{isLoggedIn ? 'Add new task...' : 'Login to add tasks...'}</span>
-        </button>
-      ) : (
-        <form onSubmit={handleSubmit} className="bg-game-background rounded-lg p-4 pixel-border border-game-accent animate-pixel-fade-in">
-          <div className="mb-4">
-            <input
-              type="text"
-              placeholder="What do you need to do?"
-              value={newTask.title}
-              onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-              className="w-full bg-transparent border-b-2 border-game-accent pb-2 focus:outline-none focus:border-game-secondary transition-colors"
-              autoFocus
-            />
-          </div>
+    <div className="mb-8 bg-game-primary/20 p-4 rounded-lg border-2 border-game-primary">
+      <h3 className="text-lg font-bold mb-4 text-game-accent">Add New Task</h3>
+      
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-game-text">Task Title</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Enter task title" 
+                    {...field} 
+                    className="bg-transparent border-2 border-game-primary focus:border-game-secondary text-game-text"
+                    disabled={isLoading}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
           
-          <div className="mb-4">
-            <label className="block mb-2 text-sm font-medium">Task type:</label>
-            <div className="flex space-x-4">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="category"
-                  value="daily"
-                  checked={newTask.category === 'daily'}
-                  onChange={() => setNewTask({ ...newTask, category: 'daily' })}
-                  className="mr-2"
-                />
-                Daily
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="category"
-                  value="goal"
-                  checked={newTask.category === 'goal'}
-                  onChange={() => setNewTask({ ...newTask, category: 'goal' })}
-                  className="mr-2"
-                />
-                Goal
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="category"
-                  value="custom"
-                  checked={newTask.category === 'custom'}
-                  onChange={() => setNewTask({ ...newTask, category: 'custom' })}
-                  className="mr-2"
-                />
-                Custom
-              </label>
-            </div>
-          </div>
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-game-text">Category</FormLabel>
+                <FormControl>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger className="bg-transparent border-2 border-game-primary text-game-text">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-game-background border-2 border-game-primary">
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="goal">Goal</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+              </FormItem>
+            )}
+          />
           
-          <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={() => setIsExpanded(false)}
-              className="px-4 py-2 text-sm"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="pixel-button"
-              disabled={newTask.title.trim() === ''}
-            >
-              Add Task
-            </button>
-          </div>
+          <Button 
+            type="submit" 
+            className="w-full pixel-button"
+            disabled={isLoading}
+          >
+            {isLoading ? "Adding..." : "Add Task"}
+          </Button>
         </form>
-      )}
+      </Form>
     </div>
   );
 };

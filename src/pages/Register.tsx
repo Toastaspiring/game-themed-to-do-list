@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Trophy, ChevronLeft } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Register: React.FC = () => {
-  const navigate = useNavigate();
+  const { signUp } = useAuth();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     username: '',
@@ -14,6 +15,7 @@ const Register: React.FC = () => {
     password: '',
     confirmPassword: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -22,7 +24,7 @@ const Register: React.FC = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
@@ -34,24 +36,14 @@ const Register: React.FC = () => {
       return;
     }
     
-    // For demo purposes - in a real app, this would create an account in a backend
-    if (formData.email && formData.password && formData.username) {
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('userEmail', formData.email);
-      localStorage.setItem('username', formData.username);
-      
-      toast({
-        title: "Registration successful!",
-        description: "Welcome to Achievement Gardens!",
-      });
-      
-      navigate('/');
-    } else {
-      toast({
-        title: "Registration failed",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
+    setIsLoading(true);
+    
+    try {
+      await signUp(formData.email, formData.password, formData.username);
+    } catch (error) {
+      // Error is already handled in the signUp function
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -85,6 +77,7 @@ const Register: React.FC = () => {
                 onChange={handleChange}
                 className="w-full px-3 py-2 bg-transparent border-b-2 border-game-primary focus:border-game-secondary outline-none transition-colors"
                 placeholder="Choose a username"
+                disabled={isLoading}
               />
             </div>
 
@@ -102,6 +95,7 @@ const Register: React.FC = () => {
                 onChange={handleChange}
                 className="w-full px-3 py-2 bg-transparent border-b-2 border-game-primary focus:border-game-secondary outline-none transition-colors"
                 placeholder="Enter your email"
+                disabled={isLoading}
               />
             </div>
 
@@ -119,6 +113,7 @@ const Register: React.FC = () => {
                 onChange={handleChange}
                 className="w-full px-3 py-2 bg-transparent border-b-2 border-game-primary focus:border-game-secondary outline-none transition-colors"
                 placeholder="Create a password"
+                disabled={isLoading}
               />
             </div>
 
@@ -136,11 +131,16 @@ const Register: React.FC = () => {
                 onChange={handleChange}
                 className="w-full px-3 py-2 bg-transparent border-b-2 border-game-primary focus:border-game-secondary outline-none transition-colors"
                 placeholder="Confirm your password"
+                disabled={isLoading}
               />
             </div>
 
-            <Button type="submit" className="w-full pixel-button">
-              Register
+            <Button 
+              type="submit" 
+              className="w-full pixel-button"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Creating account...' : 'Register'}
             </Button>
           </form>
 

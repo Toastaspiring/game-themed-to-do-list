@@ -6,19 +6,32 @@ import TaskList from '@/components/TaskList';
 import TaskForm from '@/components/TaskForm';
 import Navigation from '@/components/Navigation';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
-  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+  const { user, loading } = useAuth();
 
-  // Optional: Uncomment this section if you want to force login
-  /*
   useEffect(() => {
-    if (!isLoggedIn) {
+    // If not loading and not logged in, redirect to login
+    if (!loading && !user) {
       navigate('/login');
     }
-  }, [isLoggedIn, navigate]);
-  */
+  }, [user, loading, navigate]);
+
+  // Show minimal content while checking auth state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-game-background text-game-text flex items-center justify-center">
+        <p className="text-xl animate-pulse">Loading...</p>
+      </div>
+    );
+  }
+
+  // Only show main content if logged in
+  if (!user) {
+    return null; // Will redirect in useEffect
+  }
 
   return (
     <TaskProvider>

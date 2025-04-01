@@ -1,17 +1,19 @@
 
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Trophy, ChevronLeft } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Login: React.FC = () => {
-  const navigate = useNavigate();
+  const { signIn } = useAuth();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -20,26 +22,16 @@ const Login: React.FC = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
-    // For demo purposes - in a real app, this would authenticate with a backend
-    if (formData.email && formData.password) {
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('userEmail', formData.email);
-      
-      toast({
-        title: "Login successful!",
-        description: "Welcome back, adventurer!",
-      });
-      
-      navigate('/');
-    } else {
-      toast({
-        title: "Login failed",
-        description: "Please check your credentials and try again.",
-        variant: "destructive"
-      });
+    try {
+      await signIn(formData.email, formData.password);
+    } catch (error) {
+      // Error is already handled in the signIn function
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -74,6 +66,7 @@ const Login: React.FC = () => {
                 onChange={handleChange}
                 className="w-full px-3 py-2 bg-transparent border-b-2 border-game-primary focus:border-game-secondary outline-none transition-colors"
                 placeholder="Enter your email"
+                disabled={isLoading}
               />
             </div>
 
@@ -96,11 +89,16 @@ const Login: React.FC = () => {
                 onChange={handleChange}
                 className="w-full px-3 py-2 bg-transparent border-b-2 border-game-primary focus:border-game-secondary outline-none transition-colors"
                 placeholder="Enter your password"
+                disabled={isLoading}
               />
             </div>
 
-            <Button type="submit" className="w-full pixel-button">
-              Login
+            <Button 
+              type="submit" 
+              className="w-full pixel-button"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Logging in...' : 'Login'}
             </Button>
           </form>
 
