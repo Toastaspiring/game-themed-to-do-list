@@ -30,14 +30,17 @@ const BadgeUnlockAnimation: React.FC<BadgeUnlockAnimationProps> = ({
   
   if (!achievement) return null;
   
-  const IconComponent = Icons[achievement.icon as keyof typeof Icons] || Icons.Award;
+  // Fix here: Proper type handling for dynamic icons
+  const LucideIcon = achievement.icon in Icons 
+    ? (Icons[achievement.icon as keyof typeof Icons] as React.ElementType) 
+    : Icons.Award;
   
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 transition-opacity duration-500 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
       <div className="text-center animate-grow-and-shake">
         <div className="relative inline-block">
           <div className="achievement-badge-large mb-4 mx-auto bg-game-background p-6 rounded-full border-4 border-game-secondary">
-            {IconComponent && <IconComponent size={64} className="text-game-secondary" />}
+            <LucideIcon size={64} className="text-game-secondary" />
           </div>
           <div className="absolute -top-3 -right-3">
             <div className="animate-star-burst w-10 h-10 bg-game-secondary rounded-full opacity-0"></div>
