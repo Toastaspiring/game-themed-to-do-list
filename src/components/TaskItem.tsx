@@ -2,7 +2,7 @@
 import React from 'react';
 import { useTaskContext } from '@/contexts/TaskContext';
 import { Task } from '@/data/defaultTasks';
-import { Check, Trash2, Flame } from 'lucide-react';
+import { Check, Trash2, Flame, Star, MapPin } from 'lucide-react';
 import * as Icons from 'lucide-react';
 
 // Dynamic icon component
@@ -28,7 +28,8 @@ const TaskItem: React.FC<{ task: Task }> = ({ task }) => {
       className={`mb-3 rounded-lg pixel-border p-4 transition-all duration-300
         ${task.completed 
           ? 'bg-game-success bg-opacity-20 border-game-success' 
-          : 'bg-game-background border-game-primary'}`}
+          : 'bg-game-background border-game-primary'}
+        ${task.isMilestone ? 'border-yellow-400 border-2' : ''}`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center">
@@ -49,15 +50,23 @@ const TaskItem: React.FC<{ task: Task }> = ({ task }) => {
               </div>
             )}
             
-            <span 
-              className={`font-medium transition-all ${
-                task.completed 
-                  ? 'line-through text-gray-400' 
-                  : 'text-game-text'
-              }`}
-            >
-              {task.title}
-            </span>
+            <div>
+              <span 
+                className={`font-medium transition-all ${
+                  task.completed 
+                    ? 'line-through text-gray-400' 
+                    : 'text-game-text'
+                }`}
+              >
+                {task.title}
+              </span>
+              
+              {task.theme && (
+                <div className="text-xs text-game-text-muted mt-1 flex items-center">
+                  {task.theme.charAt(0).toUpperCase() + task.theme.slice(1)}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -66,6 +75,20 @@ const TaskItem: React.FC<{ task: Task }> = ({ task }) => {
             <div className="flex items-center bg-game-background bg-opacity-50 px-2 py-0.5 rounded text-xs">
               <Flame size={12} className="mr-1 text-game-secondary" />
               <span className="text-game-secondary font-bold">{task.streak}</span>
+            </div>
+          )}
+          
+          {task.isMilestone && (
+            <div className="flex items-center bg-yellow-400 bg-opacity-20 px-2 py-0.5 rounded text-xs">
+              <Star size={12} className="mr-1 text-yellow-400" />
+              <span className="text-yellow-400 font-bold">Milestone</span>
+            </div>
+          )}
+          
+          {task.location && (
+            <div className="hidden sm:flex items-center bg-game-background bg-opacity-50 px-2 py-0.5 rounded text-xs">
+              <MapPin size={12} className="mr-1 text-game-text-muted" />
+              <span className="text-game-text-muted">{task.location}</span>
             </div>
           )}
           

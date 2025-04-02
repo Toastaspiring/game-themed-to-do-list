@@ -17,6 +17,7 @@ const AchievementList: React.FC = () => {
       completion: achievements.filter(a => a.category === 'completion').length,
       special: achievements.filter(a => a.category === 'special').length
     });
+    console.log('Unlocked achievements:', achievements.filter(a => a.unlocked).length);
   }, [achievements]);
   
   // Filter achievements by category
@@ -31,11 +32,13 @@ const AchievementList: React.FC = () => {
     return achievementList;
   };
   
+  const unlockedCount = achievements.filter(a => a.unlocked).length;
+  
   return (
     <div className="mb-8 animate-pixel-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
         <h2 className="text-xl font-bold text-game-secondary">
-          Achievements ({achievements.length} total)
+          Achievements ({achievements.length} total, {unlockedCount} unlocked)
         </h2>
         
         <div className="mt-2 sm:mt-0 flex space-x-2">

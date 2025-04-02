@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { defaultTasks, Task } from '../data/defaultTasks';
 import { achievements as defaultAchievements, Achievement } from '../data/achievements';
@@ -21,6 +22,8 @@ const LOCAL_STORAGE_ACHIEVEMENTS_KEY = 'nostalgiaAchievements_achievements';
 const LOCAL_STORAGE_STREAK_KEY = 'nostalgiaAchievements_streak';
 const LOCAL_STORAGE_LAST_LOGIN_KEY = 'nostalgiaAchievements_lastLogin';
 const LOCAL_STORAGE_STREAK_UPDATED_TODAY = 'nostalgiaAchievements_streakUpdatedToday';
+const LOCAL_STORAGE_VISITED_LOCATIONS = 'nostalgiaAchievements_visitedLocations';
+const LOCAL_STORAGE_TASK_COUNTS = 'nostalgiaAchievements_taskCounts';
 
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>(() => {
@@ -41,7 +44,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('Adding new default achievements');
           
           const existingAchievementsMap = new Map(
-            parsed.map(achievement => [achievement.id, achievement])
+            parsed.map((achievement: Achievement) => [achievement.id, achievement])
           );
           
           const mergedAchievements = [...parsed];
@@ -76,7 +79,27 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return updated === 'true';
   });
 
+  const [visitedLocations, setVisitedLocations] = useState<string[]>(() => {
+    const storedLocations = localStorage.getItem(LOCAL_STORAGE_VISITED_LOCATIONS);
+    return storedLocations ? JSON.parse(storedLocations) : [];
+  });
+
+  const [themeCounts, setThemeCounts] = useState<Record<string, number>>(() => {
+    const storedCounts = localStorage.getItem(LOCAL_STORAGE_TASK_COUNTS);
+    return storedCounts ? JSON.parse(storedCounts) : {};
+  });
+
   const [unlockedAchievement, setUnlockedAchievement] = useState<Achievement | null>(null);
+
+  // Save visited locations to local storage
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_VISITED_LOCATIONS, JSON.stringify(visitedLocations));
+  }, [visitedLocations]);
+
+  // Save theme counts to local storage
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_TASK_COUNTS, JSON.stringify(themeCounts));
+  }, [themeCounts]);
 
   useEffect(() => {
     const lastLogin = localStorage.getItem(LOCAL_STORAGE_LAST_LOGIN_KEY);
@@ -101,6 +124,19 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setStreakUpdatedToday(false);
       localStorage.setItem(LOCAL_STORAGE_STREAK_UPDATED_TODAY, 'false');
       localStorage.setItem(LOCAL_STORAGE_LAST_LOGIN_KEY, today);
+
+      // Weekend warrior achievement check - we're on a Saturday or Sunday
+      const dayOfWeek = new Date().getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        // Check if we completed tasks yesterday and today is weekend
+        const completedYesterday = tasks.some(t => 
+          t.completedAt && new Date(t.completedAt).toDateString() === yesterdayStr
+        );
+        
+        if (completedYesterday) {
+          updateAchievement('achievement-11'); // Weekend Warrior
+        }
+      }
     }
   }, []);
 
@@ -120,6 +156,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(LOCAL_STORAGE_STREAK_UPDATED_TODAY, streakUpdatedToday.toString());
   }, [streakUpdatedToday]);
 
+  // Track task creation count for achievements
   const addTask = (task: Omit<Task, 'id' | 'createdAt' | 'completed'>) => {
     const newTask: Task = {
       ...task,
@@ -130,6 +167,35 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     setTasks([...tasks, newTask]);
+    
+    // Check task creation achievement
+    const createdTaskCount = tasks.length + 1;
+    if (createdTaskCount === 10) {
+      updateAchievement('achievement-12'); // Task Creator
+    }
+    
+    // Check if we have created tasks in various categories/themes
+    if (task.theme) {
+      const updatedThemeCounts = { ...themeCounts };
+      updatedThemeCounts[task.theme] = (updatedThemeCounts[task.theme] || 0) + 1;
+      setThemeCounts(updatedThemeCounts);
+      
+      // Check if we have tasks in 5 different themes
+      const uniqueThemes = Object.keys(updatedThemeCounts);
+      if (uniqueThemes.length === 5) {
+        updateAchievement('achievement-20'); // Task Pioneer
+      }
+      
+      // Balance Master - having active tasks in all categories
+      const hasDaily = tasks.some(t => t.category === 'daily') || task.category === 'daily';
+      const hasGoal = tasks.some(t => t.category === 'goal') || task.category === 'goal';
+      const hasCustom = tasks.some(t => t.category === 'custom') || task.category === 'custom';
+      
+      if (hasDaily && hasGoal && hasCustom) {
+        updateAchievement('achievement-13'); // Balance Master
+      }
+    }
+    
     toast({
       title: "New Task Added",
       description: `'${newTask.title}' has been added to your tasks`,
@@ -149,44 +215,206 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const toggleTaskCompletion = (taskId: string) => {
     const now = new Date();
     const today = now.toDateString();
+    const task = tasks.find(t => t.id === taskId);
     
-    setTasks(prevTasks => prevTasks.map(task => {
-      if (task.id !== taskId) return task;
-      
-      const isCompleting = !task.completed;
-      const updatedTask = {
-        ...task,
-        completed: isCompleting,
-        completedAt: isCompleting ? now.toISOString() : undefined
-      };
-      
-      if (task.category === 'daily' && isCompleting) {
-        const lastCompleted = task.lastCompleted ? new Date(task.lastCompleted).toDateString() : null;
-        const isConsecutiveDay = lastCompleted && 
-          new Date(lastCompleted).getTime() === new Date(today).getTime() - 86400000;
+    if (!task) return;
+    
+    const isCompleting = !task.completed;
+    
+    if (isCompleting) {
+      // Task is being completed
+      const completionTime = now.toISOString();
+
+      setTasks(prevTasks => prevTasks.map(t => {
+        if (t.id !== taskId) return t;
         
-        updatedTask.streak = isConsecutiveDay ? (task.streak || 0) + 1 : 1;
-        updatedTask.lastCompleted = today;
+        const updatedTask = {
+          ...t,
+          completed: true,
+          completedAt: completionTime
+        };
         
-        if (updatedTask.streak === 3) {
-          updateAchievement('achievement-2');
+        if (t.category === 'daily') {
+          const lastCompleted = t.lastCompleted ? new Date(t.lastCompleted).toDateString() : null;
+          const isConsecutiveDay = lastCompleted && 
+            new Date(lastCompleted).getTime() === new Date(today).getTime() - 86400000;
+          
+          updatedTask.streak = isConsecutiveDay ? (t.streak || 0) + 1 : 1;
+          updatedTask.lastCompleted = today;
+        }
+        
+        return updatedTask;
+      }));
+      
+      // Time-based achievements
+      const currentHour = now.getHours();
+      
+      if (currentHour < 8) {
+        updateAchievement('achievement-5'); // Early Riser
+      }
+      
+      if (currentHour >= 22) {
+        updateAchievement('achievement-10'); // Night Owl
+      }
+      
+      // Speed achievement - completed within 5 min of creation
+      if (task.createdAt) {
+        const creationTime = new Date(task.createdAt).getTime();
+        const completionTimeMs = now.getTime();
+        const timeDifferenceMinutes = (completionTimeMs - creationTime) / (1000 * 60);
+        
+        if (timeDifferenceMinutes <= 5) {
+          updateAchievement('achievement-21'); // Quick Starter
+        } else if (timeDifferenceMinutes <= 10) {
+          updateAchievement('achievement-17'); // Time Optimizer
         }
       }
       
-      return updatedTask;
-    }));
-    
-    if (tasks.find(task => task.id === taskId)?.completed === false) {
+      // Location-based achievement
+      if (task.location) {
+        // Add to visited locations if not already tracked
+        if (!visitedLocations.includes(task.location)) {
+          const newVisitedLocations = [...visitedLocations, task.location];
+          setVisitedLocations(newVisitedLocations);
+          
+          // Check for Global Achiever (3 different locations)
+          if (newVisitedLocations.length === 3) {
+            updateAchievement('achievement-24'); // Global Achiever
+          }
+        }
+      }
+      
+      // Theme-based achievements
+      if (task.theme) {
+        const updatedThemeCounts = { ...themeCounts };
+        const currentCount = (updatedThemeCounts[task.theme] || 0) + 1;
+        updatedThemeCounts[task.theme] = currentCount;
+        setThemeCounts(updatedThemeCounts);
+        
+        // Check theme-specific achievements
+        switch (task.theme) {
+          case 'health':
+            if (currentCount === 15) updateAchievement('achievement-22'); // Health Enthusiast
+            break;
+          case 'learning':
+            if (currentCount === 10) updateAchievement('achievement-18'); // Knowledge Seeker
+            break;
+          case 'creativity':
+            if (currentCount === 10) updateAchievement('achievement-25'); // Creative Genius
+            break;
+          case 'social':
+            if (currentCount === 5) updateAchievement('achievement-26'); // Social Butterfly
+            break;
+          case 'finance':
+            if (currentCount === 8) updateAchievement('achievement-27'); // Financial Wizard
+            break;
+          case 'technology':
+            if (currentCount === 7) updateAchievement('achievement-28'); // Tech Guru
+            break;
+          case 'outdoor':
+            if (currentCount === 5) updateAchievement('achievement-29'); // Adventurer
+            break;
+          case 'cooking':
+            if (currentCount === 6) updateAchievement('achievement-30'); // Chef's Hat
+            break;
+          case 'mindfulness':
+            if (currentCount === 10) updateAchievement('achievement-31'); // Mindfulness Master
+            break;
+          case 'reading':
+            if (currentCount === 5) updateAchievement('achievement-32'); // Bookworm
+            break;
+          case 'music':
+            if (currentCount === 3) updateAchievement('achievement-36'); // Melody Maker
+            break;
+          case 'film':
+            if (currentCount === 4) updateAchievement('achievement-37'); // Film Buff
+            break;
+          case 'pet':
+            if (currentCount === 10) updateAchievement('achievement-38'); // Pet Parent
+            break;
+          case 'gardening':
+            if (currentCount === 5) updateAchievement('achievement-35'); // Planting Seeds
+            break;
+          case 'shopping':
+            if (currentCount === 8) updateAchievement('achievement-40'); // Shopping Wizard
+            break;
+        }
+      }
+      
+      // Check streak achievement
+      if (task.category === 'daily' && task.streak === 3) {
+        updateAchievement('achievement-2'); // Habit Forming
+      }
+      
+      // Milestone achievement
+      if (task.isMilestone) {
+        updateAchievement('achievement-34'); // Milestone Maker
+      }
+      
+      // Count goals completed
+      if (task.category === 'goal') {
+        const completedGoals = tasks.filter(t => t.category === 'goal' && t.completed).length + 1;
+        if (completedGoals === 5) {
+          updateAchievement('achievement-8'); // Goal Getter
+        }
+      }
+      
+      // Check completion achievements
       checkCompletionAchievements();
       
-      const updatedTasks = [...tasks];
-      updatedTasks.find(t => t.id === taskId)!.completed = true;
-      
+      // Check all daily tasks completion
+      const updatedTasks = tasks.map(t => 
+        t.id === taskId ? { ...t, completed: true, completedAt: completionTime } : t
+      );
       checkAllDailyTasksCompletion(updatedTasks);
       
-      if (now.getHours() < 8) {
-        updateAchievement('achievement-5');
+      // Check for "Perfectionist" achievement - all tasks completed in one day
+      const allTasksCompleted = updatedTasks.every(t => t.completed);
+      if (allTasksCompleted && updatedTasks.length > 3) {
+        updateAchievement('achievement-9'); // Perfectionist
       }
+      
+      // Check for "Efficiency Expert" - 5 tasks in a single day
+      const tasksCompletedToday = updatedTasks.filter(t => {
+        if (!t.completedAt) return false;
+        return new Date(t.completedAt).toDateString() === today;
+      }).length;
+      
+      if (tasksCompletedToday === 5) {
+        updateAchievement('achievement-14'); // Efficiency Expert
+      }
+      
+      // Check seasonal achievement
+      const currentMonth = now.getMonth();
+      let currentSeason = '';
+      
+      if (currentMonth >= 2 && currentMonth <= 4) currentSeason = 'spring';
+      else if (currentMonth >= 5 && currentMonth <= 7) currentSeason = 'summer';
+      else if (currentMonth >= 8 && currentMonth <= 10) currentSeason = 'autumn';
+      else currentSeason = 'winter';
+      
+      // Store the season in localStorage if not already there
+      const completedSeasons = JSON.parse(localStorage.getItem('completedSeasons') || '[]');
+      if (!completedSeasons.includes(currentSeason)) {
+        completedSeasons.push(currentSeason);
+        localStorage.setItem('completedSeasons', JSON.stringify(completedSeasons));
+        
+        // Check if all seasons are completed
+        if (completedSeasons.length === 4) {
+          updateAchievement('achievement-23'); // Seasonal Planner
+        }
+      }
+    } else {
+      // Task is being uncompleted
+      setTasks(prevTasks => prevTasks.map(t => {
+        if (t.id !== taskId) return t;
+        
+        return {
+          ...t,
+          completed: false,
+          completedAt: undefined
+        };
+      }));
     }
   };
 
@@ -253,11 +481,30 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const completedCount = tasks.filter(task => task.completed).length + 1;
     
     if (completedCount === 1) {
-      updateAchievement('achievement-1');
+      updateAchievement('achievement-1'); // First Steps
     }
     
     if (completedCount === 10) {
-      updateAchievement('achievement-3');
+      updateAchievement('achievement-3'); // Task Master
+    }
+    
+    if (completedCount === 50) {
+      updateAchievement('achievement-15'); // Task Veteran
+    }
+
+    // High priority tasks in a row (for this example, we'll consider goal tasks as high priority)
+    const recentCompletedTasks = [...tasks]
+      .sort((a, b) => {
+        if (!a.completedAt || !b.completedAt) return 0;
+        return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime();
+      })
+      .slice(0, 3);
+
+    const highPriorityInARow = recentCompletedTasks.length === 3 && 
+      recentCompletedTasks.every(t => t.category === 'goal' && t.completed);
+      
+    if (highPriorityInARow) {
+      updateAchievement('achievement-16'); // Priority Manager
     }
   };
 

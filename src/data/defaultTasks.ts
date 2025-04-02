@@ -9,6 +9,10 @@ export interface Task {
   streak?: number;
   lastCompleted?: string;
   icon?: string;
+  // New fields for achievement tracking
+  theme?: 'health' | 'learning' | 'creativity' | 'productivity' | 'social' | 'finance' | 'technology' | 'outdoor' | 'cooking' | 'mindfulness' | 'reading' | 'music' | 'film' | 'pet' | 'gardening' | 'shopping';
+  location?: string;
+  isMilestone?: boolean;
 }
 
 export const defaultTasks: Task[] = [
@@ -19,7 +23,8 @@ export const defaultTasks: Task[] = [
     category: 'daily',
     createdAt: new Date().toISOString(),
     streak: 0,
-    icon: 'dumbbell'
+    icon: 'dumbbell',
+    theme: 'health'
   },
   {
     id: 'task-2',
@@ -28,7 +33,8 @@ export const defaultTasks: Task[] = [
     category: 'daily',
     createdAt: new Date().toISOString(),
     streak: 0,
-    icon: 'book'
+    icon: 'book',
+    theme: 'reading'
   },
   {
     id: 'task-3',
@@ -37,7 +43,8 @@ export const defaultTasks: Task[] = [
     category: 'daily',
     createdAt: new Date().toISOString(),
     streak: 0,
-    icon: 'glass-water'
+    icon: 'glass-water',
+    theme: 'health'
   },
   {
     id: 'task-4',
@@ -45,7 +52,9 @@ export const defaultTasks: Task[] = [
     completed: false,
     category: 'goal',
     createdAt: new Date().toISOString(),
-    icon: 'lightbulb'
+    icon: 'lightbulb',
+    theme: 'learning',
+    isMilestone: true
   },
   {
     id: 'task-5',
@@ -54,6 +63,7 @@ export const defaultTasks: Task[] = [
     category: 'daily',
     createdAt: new Date().toISOString(),
     streak: 0,
-    icon: 'brain'
+    icon: 'brain',
+    theme: 'mindfulness'
   }
 ];
