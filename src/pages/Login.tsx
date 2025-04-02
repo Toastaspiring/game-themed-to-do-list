@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -7,17 +7,44 @@ import { Trophy, ChevronLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Login: React.FC = () => {
-  const { signIn } = useAuth();
+  const { signIn, createAdminUser } = useAuth();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [showAdminCreator, setShowAdminCreator] = useState(false);
+  const [adminFormData, setAdminFormData] = useState({
+    email: 'admin@example.com',
+    password: 'admin'
+  });
+  const [adminCreating, setAdminCreating] = useState(false);
+
+  // Listen for Ctrl+Shift+A key combination to show admin creator
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+        setShowAdminCreator(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleAdminChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAdminFormData({
+      ...adminFormData,
       [e.target.name]: e.target.value
     });
   };
@@ -32,6 +59,19 @@ const Login: React.FC = () => {
       // Error is already handled in the signIn function
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleAdminCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdminCreating(true);
+    
+    try {
+      await createAdminUser(adminFormData.email, adminFormData.password);
+    } catch (error) {
+      // Error is already handled in the createAdminUser function
+    } finally {
+      setAdminCreating(false);
     }
   };
 
@@ -111,6 +151,54 @@ const Login: React.FC = () => {
             </p>
           </div>
         </div>
+        
+        {/* Hidden admin creator - press Ctrl+Shift+A to reveal */}
+        {showAdminCreator && (
+          <div className="mt-8 pixel-border border-red-500 bg-game-background p-6 rounded-lg">
+            <h2 className="text-xl font-bold text-red-500 mb-4">Create Admin User</h2>
+            <form onSubmit={handleAdminCreate} className="space-y-6">
+              <div className="space-y-2">
+                <label htmlFor="adminEmail" className="text-sm font-medium block text-game-text">
+                  Admin Email
+                </label>
+                <input
+                  id="adminEmail"
+                  name="email"
+                  type="email"
+                  value={adminFormData.email}
+                  onChange={handleAdminChange}
+                  className="w-full px-3 py-2 bg-transparent border-b-2 border-red-500 focus:border-red-300 outline-none transition-colors"
+                  placeholder="Admin email"
+                  disabled={adminCreating}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="adminPassword" className="text-sm font-medium block text-game-text">
+                  Admin Password
+                </label>
+                <input
+                  id="adminPassword"
+                  name="password"
+                  type="password"
+                  value={adminFormData.password}
+                  onChange={handleAdminChange}
+                  className="w-full px-3 py-2 bg-transparent border-b-2 border-red-500 focus:border-red-300 outline-none transition-colors"
+                  placeholder="Admin password"
+                  disabled={adminCreating}
+                />
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full bg-red-500 text-white hover:bg-red-600"
+                disabled={adminCreating}
+              >
+                {adminCreating ? 'Creating...' : 'Create Admin User'}
+              </Button>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );

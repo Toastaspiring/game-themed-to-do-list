@@ -12,6 +12,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, username: string) => Promise<void>;
   signOut: () => Promise<void>;
+  createAdminUser: (email: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -103,8 +104,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // New function to create an admin user
+  const createAdminUser = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            username: 'admin',
+            role: 'admin'
+          }
+        }
+      });
+
+      if (error) {
+        toast.error(`Admin creation failed: ${error.message}`);
+        throw error;
+      }
+
+      // Create a profile for the admin user
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            username: 'admin'
+          });
+
+        if (profileError) {
+          toast.error(`Admin profile creation failed: ${profileError.message}`);
+          throw profileError;
+        }
+      }
+      
+      toast.success("Admin user created successfully!");
+    } catch (error) {
+      console.error("Error creating admin user:", error);
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      loading, 
+      signIn, 
+      signUp, 
+      signOut, 
+      createAdminUser 
+    }}>
       {children}
     </AuthContext.Provider>
   );
