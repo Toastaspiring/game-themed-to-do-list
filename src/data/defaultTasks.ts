@@ -1,18 +1,20 @@
-
 export interface Task {
   id: string;
   title: string;
+  description?: string;
   completed: boolean;
-  category: 'daily' | 'goal' | 'custom';
   createdAt: string;
   completedAt?: string;
+  category: 'daily' | 'goal' | 'custom';
+  icon?: string;
   streak?: number;
   lastCompleted?: string;
-  icon?: string;
-  // New fields for achievement tracking
-  theme?: 'health' | 'learning' | 'creativity' | 'productivity' | 'social' | 'finance' | 'technology' | 'outdoor' | 'cooking' | 'mindfulness' | 'reading' | 'music' | 'film' | 'pet' | 'gardening' | 'shopping';
-  location?: string;
+  theme?: 'health' | 'learning' | 'creativity' | 'productivity' | 'social' | 'finance' | 
+         'technology' | 'outdoor' | 'cooking' | 'mindfulness' | 'reading' | 'music' | 
+         'film' | 'pet' | 'gardening' | 'shopping';
   isMilestone?: boolean;
+  location?: string;
+  completionLocation?: string;
 }
 
 export const defaultTasks: Task[] = [

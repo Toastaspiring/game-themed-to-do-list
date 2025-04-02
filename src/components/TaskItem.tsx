@@ -85,7 +85,14 @@ const TaskItem: React.FC<{ task: Task }> = ({ task }) => {
             </div>
           )}
           
-          {task.location && (
+          {task.completionLocation && (
+            <div className="hidden sm:flex items-center bg-game-background bg-opacity-50 px-2 py-0.5 rounded text-xs">
+              <MapPin size={12} className="mr-1 text-game-text-muted" />
+              <span className="text-game-text-muted">{task.completionLocation}</span>
+            </div>
+          )}
+          
+          {task.location && !task.completionLocation && (
             <div className="hidden sm:flex items-center bg-game-background bg-opacity-50 px-2 py-0.5 rounded text-xs">
               <MapPin size={12} className="mr-1 text-game-text-muted" />
               <span className="text-game-text-muted">{task.location}</span>

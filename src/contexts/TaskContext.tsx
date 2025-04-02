@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { defaultTasks, Task } from '../data/defaultTasks';
 import { achievements as defaultAchievements, Achievement } from '../data/achievements';
@@ -156,6 +155,46 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(LOCAL_STORAGE_STREAK_UPDATED_TODAY, streakUpdatedToday.toString());
   }, [streakUpdatedToday]);
 
+  // Function to get user's current location using browser Geolocation API
+  const getCurrentLocation = (): Promise<string> => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve("Unknown");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`
+            );
+            const data = await response.json();
+            
+            // Extract region/state or county information rather than just city
+            const region = data.address?.state || 
+                          data.address?.county || 
+                          data.address?.region || 
+                          data.address?.city || 
+                          "Unknown";
+            
+            console.log("Detected location (region):", region);
+            resolve(region);
+          } catch (error) {
+            console.error("Error getting location details:", error);
+            resolve("Unknown");
+          }
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          resolve("Unknown");
+        },
+        { timeout: 10000 }
+      );
+    });
+  };
+
   // Track task creation count for achievements
   const addTask = (task: Omit<Task, 'id' | 'createdAt' | 'completed'>) => {
     const newTask: Task = {
@@ -212,7 +251,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const toggleTaskCompletion = (taskId: string) => {
+  const toggleTaskCompletion = async (taskId: string) => {
     const now = new Date();
     const today = now.toDateString();
     const task = tasks.find(t => t.id === taskId);
@@ -224,6 +263,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isCompleting) {
       // Task is being completed
       const completionTime = now.toISOString();
+      
+      // Get the current location when completing a task
+      const currentLocation = await getCurrentLocation();
+      console.log(`Task completed at location: ${currentLocation}`);
 
       setTasks(prevTasks => prevTasks.map(t => {
         if (t.id !== taskId) return t;
@@ -231,7 +274,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const updatedTask = {
           ...t,
           completed: true,
-          completedAt: completionTime
+          completedAt: completionTime,
+          completionLocation: currentLocation // Store the location where task was completed
         };
         
         if (t.category === 'daily') {
@@ -270,11 +314,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
       
-      // Location-based achievement
-      if (task.location) {
-        // Add to visited locations if not already tracked
-        if (!visitedLocations.includes(task.location)) {
-          const newVisitedLocations = [...visitedLocations, task.location];
+      // Add to visited locations if not already tracked
+      if (currentLocation !== "Unknown") {
+        if (!visitedLocations.includes(currentLocation)) {
+          const newVisitedLocations = [...visitedLocations, currentLocation];
           setVisitedLocations(newVisitedLocations);
           
           // Check for Global Achiever (3 different locations)
@@ -364,7 +407,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Check all daily tasks completion
       const updatedTasks = tasks.map(t => 
-        t.id === taskId ? { ...t, completed: true, completedAt: completionTime } : t
+        t.id === taskId ? { 
+          ...t, 
+          completed: true, 
+          completedAt: completionTime,
+          completionLocation: currentLocation 
+        } : t
       );
       checkAllDailyTasksCompletion(updatedTasks);
       
@@ -412,7 +460,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return {
           ...t,
           completed: false,
-          completedAt: undefined
+          completedAt: undefined,
+          completionLocation: undefined // Clear completion location
         };
       }));
     }
