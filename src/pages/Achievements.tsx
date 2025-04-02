@@ -12,7 +12,7 @@ const Achievements: React.FC = () => {
         <Navigation />
         <Header />
         
-        <main className="max-w-4xl mx-auto px-4 pb-16">
+        <main className="max-w-7xl mx-auto px-4 pb-16">
           <div className="mb-8">
             <AchievementList />
           </div>
