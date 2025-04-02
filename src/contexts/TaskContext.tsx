@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { defaultTasks, Task } from '../data/defaultTasks';
-import { achievements, Achievement } from '../data/achievements';
+import { achievements as defaultAchievements, Achievement } from '../data/achievements';
 import { toast } from '@/hooks/use-toast';
 import BadgeUnlockAnimation from '@/components/BadgeUnlockAnimation';
 
@@ -30,8 +29,41 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   
   const [achievementsList, setAchievements] = useState<Achievement[]>(() => {
-    const storedAchievements = localStorage.getItem(LOCAL_STORAGE_ACHIEVEMENTS_KEY);
-    return storedAchievements ? JSON.parse(storedAchievements) : achievements;
+    try {
+      const storedAchievements = localStorage.getItem(LOCAL_STORAGE_ACHIEVEMENTS_KEY);
+      console.log('Loading achievements from storage or default');
+      
+      if (storedAchievements) {
+        const parsed = JSON.parse(storedAchievements);
+        console.log('Found stored achievements:', parsed.length);
+        
+        if (parsed.length < defaultAchievements.length) {
+          console.log('Adding new default achievements');
+          
+          const existingAchievementsMap = new Map(
+            parsed.map(achievement => [achievement.id, achievement])
+          );
+          
+          const mergedAchievements = [...parsed];
+          defaultAchievements.forEach(achievement => {
+            if (!existingAchievementsMap.has(achievement.id)) {
+              mergedAchievements.push(achievement);
+            }
+          });
+          
+          console.log('Total achievements after merge:', mergedAchievements.length);
+          return mergedAchievements;
+        }
+        
+        return parsed;
+      } else {
+        console.log('Using default achievements:', defaultAchievements.length);
+        return defaultAchievements;
+      }
+    } catch (error) {
+      console.error('Error loading achievements:', error);
+      return defaultAchievements;
+    }
   });
   
   const [streak, setStreak] = useState<number>(() => {
@@ -53,7 +85,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (lastLogin !== today) {
       resetDailyTasks();
       
-      // Reset streak to 0 if a day was skipped
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toDateString();
@@ -63,11 +94,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         toast({
           title: "Streak Reset",
           description: "You missed a day! Your streak has been reset.",
-          duration: 4000, // Adjusted to 4 seconds
+          duration: 4000,
         });
       }
       
-      // Reset the streak update flag for the new day
       setStreakUpdatedToday(false);
       localStorage.setItem(LOCAL_STORAGE_STREAK_UPDATED_TODAY, 'false');
       localStorage.setItem(LOCAL_STORAGE_LAST_LOGIN_KEY, today);
@@ -103,7 +133,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toast({
       title: "New Task Added",
       description: `'${newTask.title}' has been added to your tasks`,
-      duration: 4000, // Adjusted to 4 seconds
+      duration: 4000,
     });
   };
 
@@ -112,7 +142,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toast({
       title: "Task Deleted",
       description: "The task has been removed",
-      duration: 4000, // Adjusted to 4 seconds
+      duration: 4000,
     });
   };
 
@@ -149,9 +179,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (tasks.find(task => task.id === taskId)?.completed === false) {
       checkCompletionAchievements();
       
-      // Check if all daily tasks are completed
       const updatedTasks = [...tasks];
-      updatedTasks.find(t => t.id === taskId)!.completed = true; // Simulate the task being completed
+      updatedTasks.find(t => t.id === taskId)!.completed = true;
       
       checkAllDailyTasksCompletion(updatedTasks);
       
@@ -165,7 +194,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const dailyTasks = currentTasks.filter(task => task.category === 'daily');
     
     if (dailyTasks.length > 0 && dailyTasks.every(task => task.completed)) {
-      // All daily tasks are completed, update the streak only if not already updated today
       if (!streakUpdatedToday) {
         const today = new Date().toDateString();
         const lastLogin = localStorage.getItem(LOCAL_STORAGE_LAST_LOGIN_KEY);
@@ -182,13 +210,13 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
             toast({
               title: "Streak Started!",
               description: "Keep completing all daily tasks to build your streak!",
-              duration: 4000, // Adjusted to 4 seconds
+              duration: 4000,
             });
           } else {
             toast({
               title: "Streak Increased!",
               description: `You're on a ${newStreak} day streak! Keep it up!`,
-              duration: 4000, // Adjusted to 4 seconds
+              duration: 4000,
             });
           }
           
@@ -248,7 +276,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           toast({
             title: "Achievement Unlocked!",
             description: `${updatedAchievement.title}: ${updatedAchievement.description}`,
-            duration: 4000, // Adjusted to 4 seconds
+            duration: 4000,
           });
           
           return updatedAchievement;
@@ -268,6 +296,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleAnimationComplete = () => {
     setUnlockedAchievement(null);
   };
+
+  useEffect(() => {
+    console.log('TaskProvider mounted with', achievementsList.length, 'achievements');
+  }, []);
 
   const value = {
     tasks,

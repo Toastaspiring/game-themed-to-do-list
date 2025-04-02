@@ -11,7 +11,7 @@ export interface Achievement {
   unlockedAt?: string;
 }
 
-export const achievements: Achievement[] = [
+export const achievements = [
   {
     id: 'achievement-1',
     title: 'First Steps',

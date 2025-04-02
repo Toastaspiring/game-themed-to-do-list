@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '@/contexts/TaskContext';
 import AchievementBadge from './AchievementBadge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,6 +8,16 @@ import { Achievement } from '@/data/achievements';
 const AchievementList: React.FC = () => {
   const { achievements } = useTaskContext();
   const [filter, setFilter] = useState<'all' | 'unlocked' | 'locked'>('all');
+  
+  // Debug logging to see what we're actually getting
+  useEffect(() => {
+    console.log('Total achievements loaded:', achievements.length);
+    console.log('Achievements by category:', {
+      streak: achievements.filter(a => a.category === 'streak').length,
+      completion: achievements.filter(a => a.category === 'completion').length,
+      special: achievements.filter(a => a.category === 'special').length
+    });
+  }, [achievements]);
   
   // Filter achievements by category
   const streakAchievements = achievements.filter(a => a.category === 'streak');
@@ -24,7 +34,9 @@ const AchievementList: React.FC = () => {
   return (
     <div className="mb-8 animate-pixel-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
-        <h2 className="text-xl font-bold text-game-secondary">Achievements</h2>
+        <h2 className="text-xl font-bold text-game-secondary">
+          Achievements ({achievements.length} total)
+        </h2>
         
         <div className="mt-2 sm:mt-0 flex space-x-2">
           <button 
