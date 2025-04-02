@@ -7,8 +7,8 @@ import AchievementList from '@/components/AchievementList';
 
 const Achievements: React.FC = () => {
   return (
-    <TaskProvider>
-      <div className="min-h-screen bg-game-background text-game-text">
+    <div className="min-h-screen bg-game-background text-game-text">
+      <TaskProvider>
         <Navigation />
         <Header />
         
@@ -21,8 +21,8 @@ const Achievements: React.FC = () => {
         <footer className="text-center py-4 text-xs text-game-text-muted">
           <p>Nostalgic Achievement Gardens &copy; {new Date().getFullYear()}</p>
         </footer>
-      </div>
-    </TaskProvider>
+      </TaskProvider>
+    </div>
   );
 };
 
