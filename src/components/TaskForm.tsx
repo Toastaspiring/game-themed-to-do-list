@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '@/contexts/TaskContext';
 import { useForm } from 'react-hook-form';
@@ -12,6 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Task } from '@/data/defaultTasks';
 
 const themeOptions = [
   { value: 'health', label: 'Health & Fitness' },
@@ -32,30 +32,17 @@ const themeOptions = [
   { value: 'shopping', label: 'Shopping' }
 ];
 
-const iconOptions = [
-  { value: 'check', label: 'Check' },
-  { value: 'book', label: 'Book' },
-  { value: 'dumbbell', label: 'Fitness' },
-  { value: 'brain', label: 'Mind' },
-  { value: 'glass-water', label: 'Water' },
-  { value: 'lightbulb', label: 'Idea' },
-  { value: 'heart', label: 'Health' },
-  { value: 'dollar-sign', label: 'Finance' },
-  { value: 'laptop', label: 'Technology' },
-  { value: 'compass', label: 'Outdoor' },
-  { value: 'utensils', label: 'Cooking' },
-  { value: 'music', label: 'Music' },
-  { value: 'film', label: 'Film' },
-  { value: 'paw', label: 'Pet' },
-  { value: 'flower', label: 'Plant' },
-  { value: 'shopping-cart', label: 'Shopping' }
-];
+type TaskTheme = NonNullable<Task['theme']>;
 
 const taskSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   category: z.enum(['daily', 'goal', 'custom']),
   icon: z.string().optional(),
-  theme: z.string().optional(),
+  theme: z.enum([
+    'health', 'learning', 'creativity', 'productivity', 'social',
+    'finance', 'technology', 'outdoor', 'cooking', 'mindfulness',
+    'reading', 'music', 'film', 'pet', 'gardening', 'shopping'
+  ] as const).optional(),
   isMilestone: z.boolean().default(false)
 });
 
@@ -78,7 +65,6 @@ const TaskForm: React.FC = () => {
     }
   });
 
-  // Request location when the form is loaded
   useEffect(() => {
     const requestUserLocation = async () => {
       try {
@@ -87,7 +73,6 @@ const TaskForm: React.FC = () => {
             async (position) => {
               const { latitude, longitude } = position.coords;
               try {
-                // Use reverse geocoding to get the city name
                 const response = await fetch(
                   `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`
                 );
@@ -130,12 +115,11 @@ const TaskForm: React.FC = () => {
         title: values.title,
         category: values.category,
         icon: values.icon,
-        theme: values.theme,
+        theme: values.theme as TaskTheme,
         isMilestone: values.isMilestone,
         location: userLocation || undefined
       };
 
-      // If user is logged in, save to Supabase
       if (user) {
         const { error } = await supabase
           .from('tasks')
@@ -152,10 +136,8 @@ const TaskForm: React.FC = () => {
         if (error) throw error;
       }
 
-      // Add to local state
       addTask(newTask);
       
-      // Reset the form
       form.reset({
         title: '',
         category: 'daily',
@@ -164,7 +146,6 @@ const TaskForm: React.FC = () => {
         isMilestone: false
       });
       
-      // Achievement check for creation
       toast.success("Task added successfully");
     } catch (error) {
       console.error("Error adding task:", error);
