@@ -32,6 +32,25 @@ const themeOptions = [
   { value: 'shopping', label: 'Shopping' }
 ];
 
+const iconOptions = [
+  { value: 'check', label: 'Check' },
+  { value: 'book', label: 'Book' },
+  { value: 'dumbbell', label: 'Fitness' },
+  { value: 'brain', label: 'Mind' },
+  { value: 'glass-water', label: 'Water' },
+  { value: 'lightbulb', label: 'Idea' },
+  { value: 'heart', label: 'Health' },
+  { value: 'dollar-sign', label: 'Finance' },
+  { value: 'laptop', label: 'Technology' },
+  { value: 'compass', label: 'Outdoor' },
+  { value: 'utensils', label: 'Cooking' },
+  { value: 'music', label: 'Music' },
+  { value: 'film', label: 'Film' },
+  { value: 'paw-print', label: 'Pet' },
+  { value: 'flower', label: 'Plant' },
+  { value: 'shopping-cart', label: 'Shopping' }
+];
+
 type TaskTheme = NonNullable<Task['theme']>;
 
 const taskSchema = z.object({
