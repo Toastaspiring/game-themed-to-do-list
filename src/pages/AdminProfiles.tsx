@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import Navigation from '@/components/Navigation';
 
 interface Profile {
   id: string;
@@ -30,16 +31,14 @@ const AdminProfiles: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is admin
-    async function checkAdminAndLoadData() {
-      if (!user) {
-        navigate('/login');
-        return;
-      }
+    // Check if user is authenticated
+    if (!user) {
+      navigate('/login');
+      return;
+    }
 
-      // For demonstration, we'll assume any logged-in user can view this page
-      // In production, you should implement proper admin role checks
-      
+    // Load profiles data
+    async function loadProfiles() {
       try {
         const { data, error } = await supabase
           .from('profiles')
@@ -57,10 +56,10 @@ const AdminProfiles: React.FC = () => {
       }
     }
     
-    checkAdminAndLoadData();
+    loadProfiles();
   }, [user, navigate]);
 
-  // Function to set/update a hash password (simplified for demo)
+  // Function to generate/update a hash password
   const updateHashPassword = async (profileId: string, username: string | null) => {
     if (!username) return;
     
@@ -90,7 +89,7 @@ const AdminProfiles: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 pb-20 pt-8">
       <div className="mb-6">
         <button 
           onClick={() => navigate('/')} 
@@ -144,6 +143,8 @@ const AdminProfiles: React.FC = () => {
           </TableBody>
         </Table>
       )}
+      
+      <Navigation />
     </div>
   );
 };
