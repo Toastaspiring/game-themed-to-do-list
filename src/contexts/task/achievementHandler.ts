@@ -1,7 +1,7 @@
 
 import { Achievement } from '@/data/achievements';
 import { Task } from '@/data/defaultTasks';
-import { displayAchievementToast } from './taskUtils';
+import { displayAchievementToast, displayStreakToast } from './taskUtils';
 
 export interface AchievementHandlerProps {
   achievements: Achievement[];
