@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Trophy, ChevronLeft } from 'lucide-react';
@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const Login: React.FC = () => {
   const { signIn, createAdminUser } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -49,6 +50,10 @@ const Login: React.FC = () => {
     });
   };
 
+  const handleBackToHome = () => {
+    navigate('/');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -79,10 +84,13 @@ const Login: React.FC = () => {
     <div className="min-h-screen bg-game-background flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <Link to="/" className="inline-flex items-center text-game-text hover:text-game-accent mb-6">
+          <button 
+            onClick={handleBackToHome} 
+            className="inline-flex items-center text-game-text hover:text-game-accent mb-6"
+          >
             <ChevronLeft size={20} />
             <span className="ml-1">Back to Home</span>
-          </Link>
+          </button>
           <div className="flex justify-center mb-4">
             <Trophy size={48} className="text-game-secondary animate-pulse" />
           </div>

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Trophy, Home, LogOut, LogIn, UserPlus } from 'lucide-react';
+import { Trophy, Home, LogOut, LogIn, UserPlus, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Navigation: React.FC = () => {
@@ -35,6 +35,18 @@ const Navigation: React.FC = () => {
           <Trophy size={20} />
           <span className="mt-1">Achievements</span>
         </Link>
+
+        {user && (
+          <Link 
+            to="/admin/profiles" 
+            className={`flex flex-col items-center text-sm ${
+              location.pathname === '/admin/profiles' ? 'text-game-accent' : 'text-game-text'
+            } hover:text-game-accent transition-colors`}
+          >
+            <Users size={20} />
+            <span className="mt-1">Profiles</span>
+          </Link>
+        )}
         
         {user ? (
           <button
