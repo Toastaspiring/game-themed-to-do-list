@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
@@ -13,6 +12,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, username: string) => Promise<void>;
   signOut: () => Promise<void>;
   createAdminUser: (email: string, password: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,7 +24,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setSession(session);
@@ -33,7 +32,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -47,19 +45,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (identifier: string, password: string) => {
     try {
-      // Determine if identifier is an email (contains @) or a username
       const isEmail = identifier.includes('@');
       
       let authResponse;
       
       if (isEmail) {
-        // If it's an email, use standard signInWithPassword
         authResponse = await supabase.auth.signInWithPassword({ 
           email: identifier, 
           password 
         });
       } else {
-        // If it's a username, first fetch the email associated with that username
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('email')
@@ -71,7 +66,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw new Error('User not found');
         }
         
-        // Then sign in with the retrieved email
         authResponse = await supabase.auth.signInWithPassword({ 
           email: profileData.email, 
           password 
@@ -95,7 +89,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, username: string) => {
     try {
-      // First check if username is already taken
       const { data: existingUser, error: usernameCheckError } = await supabase
         .from('profiles')
         .select('username')
@@ -147,7 +140,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // New function to create an admin user
   const createAdminUser = async (email: string, password: string) => {
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -166,7 +158,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      // Create a profile for the admin user
       if (data.user) {
         const { error: profileError } = await supabase
           .from('profiles')
@@ -188,6 +179,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+
+      if (error) {
+        toast.error(`Password reset failed: ${error.message}`);
+        throw error;
+      }
+
+      toast.success('Password reset email sent. Please check your inbox.');
+    } catch (error) {
+      console.error("Error during password reset:", error);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -196,7 +205,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signIn, 
       signUp, 
       signOut, 
-      createAdminUser 
+      createAdminUser, 
+      resetPassword 
     }}>
       {children}
     </AuthContext.Provider>

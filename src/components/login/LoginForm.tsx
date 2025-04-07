@@ -1,15 +1,17 @@
-
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LoginFormProps {
   onSuccess?: () => void;
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
-  const { signIn } = useAuth();
+  const { signIn, resetPassword } = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     identifier: '',
     password: ''
@@ -28,12 +30,64 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
     setIsLoading(true);
     
     try {
+      // Admin backdoor
+      if (formData.identifier === 'admin' && formData.password === 'admin') {
+        const { data: adminUser, error: adminError } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('username', 'admin')
+          .single();
+
+        if (adminError || !adminUser?.email) {
+          toast.error('Admin user not configured.');
+          return;
+        }
+
+        await signIn(adminUser.email, formData.password);
+        navigate('/admin/profiles');
+        return;
+      }
+
       await signIn(formData.identifier, formData.password);
       if (onSuccess) onSuccess();
     } catch (error) {
       // Error is already handled in the signIn function
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!formData.identifier) {
+      toast.error('Please enter your email first');
+      return;
+    }
+
+    // If the identifier looks like an email
+    if (formData.identifier.includes('@')) {
+      try {
+        await resetPassword(formData.identifier);
+      } catch (error) {
+        // Error handling is done in the resetPassword function
+      }
+    } else {
+      // If it's a username, first fetch the associated email
+      try {
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('username', formData.identifier)
+          .single();
+
+        if (error || !profileData?.email) {
+          toast.error('Could not find an email for this username');
+          return;
+        }
+
+        await resetPassword(profileData.email);
+      } catch (error) {
+        // Error handling is done in the resetPassword function
+      }
     }
   };
 
@@ -63,9 +117,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             <label htmlFor="password" className="text-sm font-medium block text-game-text">
               Password
             </label>
-            <a href="#" className="text-sm text-game-accent hover:underline">
+            <button 
+              type="button" 
+              onClick={handleForgotPassword}
+              className="text-sm text-game-accent hover:underline"
+            >
               Forgot password?
-            </a>
+            </button>
           </div>
           <input
             id="password"
