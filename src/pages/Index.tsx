@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { TaskProvider } from '@/contexts/TaskContext';
 import Header from '@/components/Header';
 import TaskList from '@/components/TaskList';
@@ -7,10 +7,20 @@ import TaskForm from '@/components/TaskForm';
 import Navigation from '@/components/Navigation';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { PlusCircle } from 'lucide-react';
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
 
   useEffect(() => {
     // If not loading and not logged in, redirect to login
@@ -41,8 +51,25 @@ const Index: React.FC = () => {
         
         <main className="max-w-4xl mx-auto px-4 pb-16">
           <div className="animate-pixel-fade-in">
-            <h2 className="text-xl font-bold mb-4 text-game-accent">Tasks</h2>
-            <TaskForm />
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-game-accent">Tasks</h2>
+              
+              <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
+                <DialogTrigger asChild>
+                  <Button className="pixel-button">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Task
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px] bg-game-background border-2 border-game-primary">
+                  <DialogHeader>
+                    <DialogTitle className="text-lg font-bold text-game-accent">Add New Task</DialogTitle>
+                  </DialogHeader>
+                  <TaskForm onTaskAdded={() => setIsTaskFormOpen(false)} />
+                </DialogContent>
+              </Dialog>
+            </div>
+            
             <TaskList />
           </div>
         </main>

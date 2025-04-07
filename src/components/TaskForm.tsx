@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '@/contexts/TaskContext';
 import { useForm } from 'react-hook-form';
@@ -67,7 +68,11 @@ const taskSchema = z.object({
 
 type TaskFormValues = z.infer<typeof taskSchema>;
 
-const TaskForm: React.FC = () => {
+interface TaskFormProps {
+  onTaskAdded?: () => void;
+}
+
+const TaskForm: React.FC<TaskFormProps> = ({ onTaskAdded }) => {
   const { addTask } = useTaskContext();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -166,6 +171,11 @@ const TaskForm: React.FC = () => {
       });
       
       toast.success("Task added successfully");
+      
+      // Call the callback function if provided
+      if (onTaskAdded) {
+        onTaskAdded();
+      }
     } catch (error) {
       console.error("Error adding task:", error);
       toast.error("Failed to add task. Please try again.");
@@ -175,9 +185,7 @@ const TaskForm: React.FC = () => {
   };
 
   return (
-    <div className="mb-8 bg-game-primary/20 p-4 rounded-lg border-2 border-game-primary">
-      <h3 className="text-lg font-bold mb-4 text-game-accent">Add New Task</h3>
-      
+    <div className="bg-game-primary/20 p-4 rounded-lg">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
