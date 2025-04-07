@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Achievements from "./pages/Achievements";
 import AdminProfiles from "./pages/AdminProfiles";
+import PasswordReset from "./pages/PasswordReset";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/reset-password" element={<PasswordReset />} />
             <Route path="/achievements" element={<Achievements />} />
             <Route path="/admin/profiles" element={<AdminProfiles />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
