@@ -9,7 +9,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (identifier: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, username: string) => Promise<void>;
   signOut: () => Promise<void>;
   createAdminUser: (email: string, password: string) => Promise<void>;
@@ -45,9 +45,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (identifier: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      // Determine if identifier is an email (contains @) or a username
+      const isEmail = identifier.includes('@');
+      
+      let authResponse;
+      
+      if (isEmail) {
+        // If it's an email, use standard signInWithPassword
+        authResponse = await supabase.auth.signInWithPassword({ 
+          email: identifier, 
+          password 
+        });
+      } else {
+        // If it's a username, first fetch the email associated with that username
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('username', identifier)
+          .single();
+        
+        if (profileError || !profileData?.email) {
+          toast.error('User not found. Please check your username.');
+          throw new Error('User not found');
+        }
+        
+        // Then sign in with the retrieved email
+        authResponse = await supabase.auth.signInWithPassword({ 
+          email: profileData.email, 
+          password 
+        });
+      }
+      
+      const { error } = authResponse;
       
       if (error) {
         toast.error(`Login failed: ${error.message}`);
@@ -64,6 +95,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, username: string) => {
     try {
+      // First check if username is already taken
+      const { data: existingUser, error: usernameCheckError } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', username)
+        .single();
+      
+      if (existingUser) {
+        toast.error('Username is already taken. Please choose another one.');
+        throw new Error('Username already taken');
+      }
+      
       const { error } = await supabase.auth.signUp({ 
         email, 
         password,

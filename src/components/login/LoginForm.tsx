@@ -11,7 +11,7 @@ interface LoginFormProps {
 const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   const { signIn } = useAuth();
   const [formData, setFormData] = useState({
-    email: '',
+    identifier: '',
     password: ''
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -28,7 +28,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
     setIsLoading(true);
     
     try {
-      await signIn(formData.email, formData.password);
+      await signIn(formData.identifier, formData.password);
       if (onSuccess) onSuccess();
     } catch (error) {
       // Error is already handled in the signIn function
@@ -41,19 +41,19 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
     <div className="pixel-border border-game-primary bg-game-background p-6 rounded-lg">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium block text-game-text">
-            Email
+          <label htmlFor="identifier" className="text-sm font-medium block text-game-text">
+            Email or Username
           </label>
           <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
+            id="identifier"
+            name="identifier"
+            type="text"
+            autoComplete="username"
             required
-            value={formData.email}
+            value={formData.identifier}
             onChange={handleChange}
             className="w-full px-3 py-2 bg-transparent border-b-2 border-game-primary focus:border-game-secondary outline-none transition-colors"
-            placeholder="Enter your email"
+            placeholder="Enter your email or username"
             disabled={isLoading}
           />
         </div>
