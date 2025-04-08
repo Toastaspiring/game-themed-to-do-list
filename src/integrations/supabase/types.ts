@@ -52,7 +52,7 @@ export type Database = {
         Row: {
           created_at: string | null
           email: string | null
-          hashpasswd: string | null
+          hashpassword: string | null
           id: string
           updated_at: string | null
           username: string | null

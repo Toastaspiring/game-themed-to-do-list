@@ -1,127 +1,40 @@
 
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Session, User } from '@supabase/supabase-js';
-import { useNavigate } from 'react-router-dom';
-import { AuthContextType } from '@/types/auth';
-import {
-  signInWithSupabase,
-  signInDirect as signInDirectService,
-  signUpWithSupabase,
-  signOutUser,
-  createAdmin,
-  resetUserPassword
-} from '@/services/authService';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import * as authService from '@/services/authService';
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext(null);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    const stored = localStorage.getItem('user');
+    if (stored) setUser(JSON.parse(stored));
   }, []);
 
-  const signIn = async (identifier: string, password: string) => {
-    try {
-      await signInWithSupabase(identifier, password);
-      navigate('/');
-    } catch (error) {
-      console.error("Error during sign in:", error);
-      throw error;
-    }
+  const loginUser = async (identifier, password) => {
+    const user = await authService.login(identifier, password);
+    setUser(user);
   };
 
-  const signInDirect = async (username: string, hashedPassword: string) => {
-    try {
-      const mockUser = await signInDirectService(username, hashedPassword);
-      setUser(mockUser as User);
-    } catch (error) {
-      console.error("Error during direct sign in:", error);
-      throw error;
-    }
+  const registerUser = async (email, username, password) => {
+    await authService.register(email, username, password);
   };
 
-  const signUp = async (email: string, password: string, username: string) => {
-    try {
-      await signUpWithSupabase(email, password, username);
-      navigate('/login');
-    } catch (error) {
-      console.error("Error during sign up:", error);
-      throw error;
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      await signOutUser();
-      setUser(null);
-      setSession(null);
-      navigate('/login');
-    } catch (error) {
-      console.error("Error during sign out:", error);
-      throw error;
-    }
-  };
-
-  const createAdminUser = async (email: string, password: string) => {
-    try {
-      await createAdmin(email, password);
-    } catch (error) {
-      console.error("Error creating admin user:", error);
-      throw error;
-    }
-  };
-
-  const resetPassword = async (email: string) => {
-    try {
-      await resetUserPassword(email);
-    } catch (error) {
-      console.error("Error during password reset:", error);
-      throw error;
-    }
+  const logoutUser = () => {
+    authService.logout();
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session, 
-      loading, 
-      signIn, 
-      signInDirect,
-      signUp, 
-      signOut, 
-      createAdminUser, 
-      resetPassword 
-    }}>
+    <AuthContext.Provider value={{ user, loginUser, registerUser, logoutUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 };

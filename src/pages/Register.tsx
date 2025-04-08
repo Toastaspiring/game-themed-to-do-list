@@ -1,14 +1,16 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Trophy, ChevronLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Register: React.FC = () => {
-  const { signUp } = useAuth();
+  const { registerUser } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -39,9 +41,15 @@ const Register: React.FC = () => {
     setIsLoading(true);
     
     try {
-      await signUp(formData.email, formData.password, formData.username);
+      await registerUser(formData.username, formData.email, formData.password);
+      toast({
+        title: "Account created",
+        description: "You can now log in.",
+        variant: "default"
+      });
+      navigate('/login');
     } catch (error) {
-      // Error is already handled in the signUp function
+      console.error("Register error:", error);
     } finally {
       setIsLoading(false);
     }

@@ -1,16 +1,16 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { generateSHA256Hash } from '@/utils/authUtils';
 
 interface LoginFormProps {
   onSuccess?: () => void;
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
-  const { signInDirect } = useAuth();
+  const { loginUser } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: '',
@@ -30,17 +30,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
     setIsLoading(true);
     
     try {
-      // Generate hash of the entered password
-      const hashedPassword = await generateSHA256Hash(formData.password);
-      
-      // Call the direct sign-in method
-      await signInDirect(formData.username, hashedPassword);
-      
+      await loginUser(formData.username, formData.password);
       if (onSuccess) onSuccess();
       navigate('/');
     } catch (error) {
-      // Error is already handled in the signInDirect function
       console.error("Login form error:", error);
+      // toast handled in loginUser
     } finally {
       setIsLoading(false);
     }
