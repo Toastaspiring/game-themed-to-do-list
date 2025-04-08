@@ -59,18 +59,29 @@ const AdminProfiles: React.FC = () => {
     loadProfiles();
   }, [user, navigate]);
 
+  // Function to generate SHA-256 hash of a string
+  const generateSHA256Hash = async (text: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+  };
+
   // Function to generate/update a hash password
   const updateHashPassword = async (profileId: string, username: string | null) => {
     if (!username) return;
     
-    // For demo purposes, we're creating a simple hash of username + timestamp
-    // In production, use proper password hashing libraries like bcrypt
-    const demoHash = btoa(`${username}-${Date.now()}`);
-    
     try {
+      // Generate a SHA-256 hash of the username + timestamp
+      const timestamp = Date.now().toString();
+      const textToHash = `${username}-${timestamp}`;
+      const shaHash = await generateSHA256Hash(textToHash);
+      
       const { error } = await supabase
         .from('profiles')
-        .update({ hashpasswd: demoHash })
+        .update({ hashpasswd: shaHash })
         .eq('id', profileId);
         
       if (error) {
@@ -79,10 +90,10 @@ const AdminProfiles: React.FC = () => {
       
       // Update local state
       setProfiles(profiles.map(p => 
-        p.id === profileId ? { ...p, hashpasswd: demoHash } : p
+        p.id === profileId ? { ...p, hashpasswd: shaHash } : p
       ));
       
-      toast.success("Hash password updated!");
+      toast.success("SHA-256 hash password generated!");
     } catch (error: any) {
       toast.error(`Error updating hash: ${error.message}`);
     }
