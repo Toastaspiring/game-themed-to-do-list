@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
@@ -10,6 +9,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signIn: (identifier: string, password: string) => Promise<void>;
+  signInDirect: (username: string, hashedPassword: string) => Promise<void>;
   signUp: (email: string, password: string, username: string) => Promise<void>;
   signOut: () => Promise<void>;
   createAdminUser: (email: string, password: string) => Promise<void>;
@@ -104,6 +104,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signInDirect = async (username: string, hashedPassword: string) => {
+    try {
+      console.log("Signing in directly with username:", username);
+      
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, username, email, hashpasswd')
+        .eq('username', username);
+      
+      if (profileError) {
+        console.error("Profile lookup error:", profileError);
+        toast.error(`Error looking up username: ${profileError.message}`);
+        throw new Error(`Error looking up username: ${profileError.message}`);
+      }
+      
+      if (!profileData || profileData.length === 0) {
+        console.error("No profile found for username:", username);
+        toast.error(`User not found. Please check your username.`);
+        throw new Error('User not found');
+      }
+      
+      if (profileData[0].hashpasswd !== hashedPassword) {
+        console.error("Password does not match for user:", username);
+        toast.error('Invalid password. Please try again.');
+        throw new Error('Invalid password');
+      }
+      
+      const mockUser = {
+        id: profileData[0].id,
+        email: profileData[0].email || '',
+        user_metadata: {
+          username: username
+        }
+      } as unknown as User;
+      
+      setUser(mockUser);
+      
+      localStorage.setItem('directAuthUser', JSON.stringify({
+        id: profileData[0].id,
+        username: username,
+        email: profileData[0].email
+      }));
+      
+      toast.success("Logged in successfully!");
+    } catch (error) {
+      console.error("Error during direct sign in:", error);
+      throw error;
+    }
+  };
+
   const signUp = async (email: string, password: string, username: string) => {
     try {
       const { data: existingUser, error: usernameCheckError } = await supabase
@@ -142,6 +192,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      localStorage.removeItem('directAuthUser');
+      
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -220,6 +272,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       session, 
       loading, 
       signIn, 
+      signInDirect,
       signUp, 
       signOut, 
       createAdminUser, 

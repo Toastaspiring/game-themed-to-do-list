@@ -11,10 +11,10 @@ interface LoginFormProps {
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
-  const { signIn, resetPassword } = useAuth();
+  const { signInDirect } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    identifier: '',
+    username: '',
     password: ''
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -26,86 +26,34 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
     });
   };
 
+  // Function to generate SHA-256 hash of a string
+  const generateSHA256Hash = async (text: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      // Check if identifier is a username to provide better error messages
-      if (!formData.identifier.includes('@')) {
-        // It's a username, let's first check if it exists
-        const { data: profileData, error } = await supabase
-          .from('profiles')
-          .select('email, username')
-          .eq('username', formData.identifier);
-        
-        console.log("Profile lookup result:", { profileData, error });
-        
-        if (error) {
-          toast.error(`Error looking up username: ${error.message}`);
-          setIsLoading(false);
-          return;
-        }
-        
-        if (!profileData || profileData.length === 0) {
-          toast.error(`Username "${formData.identifier}" not found. Please check your username or use your email address.`);
-          setIsLoading(false);
-          return;
-        }
-        
-        if (profileData.length > 1) {
-          toast.error('Multiple accounts found with this username. Please use your email to sign in.');
-          setIsLoading(false);
-          return;
-        }
-        
-        // If we made it here, we have a single profile with this username
-        // Now attempt sign in with the associated email
-        await signIn(profileData[0].email, formData.password);
-      } else {
-        // It's an email, sign in directly
-        await signIn(formData.identifier, formData.password);
-      }
+      // Generate hash of the entered password
+      const hashedPassword = await generateSHA256Hash(formData.password);
+      
+      // Call the direct sign-in method
+      await signInDirect(formData.username, hashedPassword);
       
       if (onSuccess) onSuccess();
+      navigate('/');
     } catch (error) {
-      // Error is already handled in the signIn function
+      // Error is already handled in the signInDirect function
       console.error("Login form error:", error);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async () => {
-    if (!formData.identifier) {
-      toast.error('Please enter your email first');
-      return;
-    }
-
-    // If the identifier looks like an email
-    if (formData.identifier.includes('@')) {
-      try {
-        await resetPassword(formData.identifier);
-      } catch (error) {
-        // Error handling is done in the resetPassword function
-      }
-    } else {
-      // If it's a username, first fetch the associated email
-      try {
-        const { data: profileData, error } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('username', formData.identifier);
-
-        if (error || !profileData || profileData.length === 0) {
-          toast.error('Could not find an email for this username');
-          return;
-        }
-
-        await resetPassword(profileData[0].email);
-      } catch (error) {
-        // Error handling is done in the resetPassword function
-      }
     }
   };
 
@@ -113,36 +61,27 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
     <div className="pixel-border border-game-primary bg-game-background p-6 rounded-lg">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <label htmlFor="identifier" className="text-sm font-medium block text-game-text">
-            Email or Username
+          <label htmlFor="username" className="text-sm font-medium block text-game-text">
+            Username
           </label>
           <input
-            id="identifier"
-            name="identifier"
+            id="username"
+            name="username"
             type="text"
             autoComplete="username"
             required
-            value={formData.identifier}
+            value={formData.username}
             onChange={handleChange}
             className="w-full px-3 py-2 bg-transparent border-b-2 border-game-primary focus:border-game-secondary outline-none transition-colors"
-            placeholder="Enter your email or username"
+            placeholder="Enter your username"
             disabled={isLoading}
           />
         </div>
 
         <div className="space-y-2">
-          <div className="flex justify-between">
-            <label htmlFor="password" className="text-sm font-medium block text-game-text">
-              Password
-            </label>
-            <button 
-              type="button" 
-              onClick={handleForgotPassword}
-              className="text-sm text-game-accent hover:underline"
-            >
-              Forgot password?
-            </button>
-          </div>
+          <label htmlFor="password" className="text-sm font-medium block text-game-text">
+            Password
+          </label>
           <input
             id="password"
             name="password"
