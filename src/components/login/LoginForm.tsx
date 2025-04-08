@@ -30,24 +30,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
     setIsLoading(true);
     
     try {
-      // Admin backdoor
-      if (formData.identifier === 'admin' && formData.password === 'admin') {
-        const { data: adminUser, error: adminError } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('username', 'admin')
-          .single();
-
-        if (adminError || !adminUser?.email) {
-          toast.error('Admin user not configured.');
-          return;
-        }
-
-        await signIn(adminUser.email, formData.password);
-        navigate('/admin/profiles');
-        return;
-      }
-
       await signIn(formData.identifier, formData.password);
       if (onSuccess) onSuccess();
     } catch (error) {
