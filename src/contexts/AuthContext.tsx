@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
@@ -50,24 +51,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let authResponse;
       
       if (isEmail) {
+        console.log("Signing in with email:", identifier);
         authResponse = await supabase.auth.signInWithPassword({ 
           email: identifier, 
           password 
         });
       } else {
+        console.log("Looking up email for username:", identifier);
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('email')
-          .eq('username', identifier)
-          .single();
+          .eq('username', identifier);
         
-        if (profileError || !profileData?.email) {
-          toast.error('User not found. Please check your username.');
+        if (profileError) {
+          console.error("Profile lookup error:", profileError);
+          toast.error(`Error looking up username: ${profileError.message}`);
+          throw new Error(`Error looking up username: ${profileError.message}`);
+        }
+        
+        if (!profileData || profileData.length === 0) {
+          console.error("No profile found for username:", identifier);
+          toast.error(`User not found. Please check your username.`);
           throw new Error('User not found');
         }
         
+        if (profileData.length > 1) {
+          console.error("Multiple profiles found for username:", identifier);
+          toast.error('Multiple accounts found with this username. Please use your email to sign in.');
+          throw new Error('Multiple accounts found');
+        }
+        
+        console.log("Found email for username:", profileData[0].email);
         authResponse = await supabase.auth.signInWithPassword({ 
-          email: profileData.email, 
+          email: profileData[0].email, 
           password 
         });
       }
@@ -75,6 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = authResponse;
       
       if (error) {
+        console.error("Auth error:", error);
         toast.error(`Login failed: ${error.message}`);
         throw error;
       }

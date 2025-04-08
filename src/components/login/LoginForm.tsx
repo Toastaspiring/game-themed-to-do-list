@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -30,10 +31,46 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
     setIsLoading(true);
     
     try {
-      await signIn(formData.identifier, formData.password);
+      // Check if identifier is a username to provide better error messages
+      if (!formData.identifier.includes('@')) {
+        // It's a username, let's first check if it exists
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('email, username')
+          .eq('username', formData.identifier);
+        
+        console.log("Profile lookup result:", { profileData, error });
+        
+        if (error) {
+          toast.error(`Error looking up username: ${error.message}`);
+          setIsLoading(false);
+          return;
+        }
+        
+        if (!profileData || profileData.length === 0) {
+          toast.error(`Username "${formData.identifier}" not found. Please check your username or use your email address.`);
+          setIsLoading(false);
+          return;
+        }
+        
+        if (profileData.length > 1) {
+          toast.error('Multiple accounts found with this username. Please use your email to sign in.');
+          setIsLoading(false);
+          return;
+        }
+        
+        // If we made it here, we have a single profile with this username
+        // Now attempt sign in with the associated email
+        await signIn(profileData[0].email, formData.password);
+      } else {
+        // It's an email, sign in directly
+        await signIn(formData.identifier, formData.password);
+      }
+      
       if (onSuccess) onSuccess();
     } catch (error) {
       // Error is already handled in the signIn function
+      console.error("Login form error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -58,15 +95,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         const { data: profileData, error } = await supabase
           .from('profiles')
           .select('email')
-          .eq('username', formData.identifier)
-          .single();
+          .eq('username', formData.identifier);
 
-        if (error || !profileData?.email) {
+        if (error || !profileData || profileData.length === 0) {
           toast.error('Could not find an email for this username');
           return;
         }
 
-        await resetPassword(profileData.email);
+        await resetPassword(profileData[0].email);
       } catch (error) {
         // Error handling is done in the resetPassword function
       }
