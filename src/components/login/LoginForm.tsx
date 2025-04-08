@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { generateSHA256Hash } from '@/utils/authUtils';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -24,16 +23,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
       ...formData,
       [e.target.name]: e.target.value
     });
-  };
-
-  // Function to generate SHA-256 hash of a string
-  const generateSHA256Hash = async (text: string): Promise<string> => {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(text);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

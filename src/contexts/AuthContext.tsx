@@ -1,20 +1,17 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  signIn: (identifier: string, password: string) => Promise<void>;
-  signInDirect: (username: string, hashedPassword: string) => Promise<void>;
-  signUp: (email: string, password: string, username: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  createAdminUser: (email: string, password: string) => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-}
+import { AuthContextType } from '@/types/auth';
+import {
+  signInWithSupabase,
+  signInDirect as signInDirectService,
+  signUpWithSupabase,
+  signOutUser,
+  createAdmin,
+  resetUserPassword
+} from '@/services/authService';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -46,57 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (identifier: string, password: string) => {
     try {
-      const isEmail = identifier.includes('@');
-      
-      let authResponse;
-      
-      if (isEmail) {
-        console.log("Signing in with email:", identifier);
-        authResponse = await supabase.auth.signInWithPassword({ 
-          email: identifier, 
-          password 
-        });
-      } else {
-        console.log("Looking up email for username:", identifier);
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('username', identifier);
-        
-        if (profileError) {
-          console.error("Profile lookup error:", profileError);
-          toast.error(`Error looking up username: ${profileError.message}`);
-          throw new Error(`Error looking up username: ${profileError.message}`);
-        }
-        
-        if (!profileData || profileData.length === 0) {
-          console.error("No profile found for username:", identifier);
-          toast.error(`User not found. Please check your username.`);
-          throw new Error('User not found');
-        }
-        
-        if (profileData.length > 1) {
-          console.error("Multiple profiles found for username:", identifier);
-          toast.error('Multiple accounts found with this username. Please use your email to sign in.');
-          throw new Error('Multiple accounts found');
-        }
-        
-        console.log("Found email for username:", profileData[0].email);
-        authResponse = await supabase.auth.signInWithPassword({ 
-          email: profileData[0].email, 
-          password 
-        });
-      }
-      
-      const { error } = authResponse;
-      
-      if (error) {
-        console.error("Auth error:", error);
-        toast.error(`Login failed: ${error.message}`);
-        throw error;
-      }
-      
-      toast.success("Logged in successfully!");
+      await signInWithSupabase(identifier, password);
       navigate('/');
     } catch (error) {
       console.error("Error during sign in:", error);
@@ -106,48 +53,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInDirect = async (username: string, hashedPassword: string) => {
     try {
-      console.log("Signing in directly with username:", username);
-      
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, username, email, hashpasswd')
-        .eq('username', username);
-      
-      if (profileError) {
-        console.error("Profile lookup error:", profileError);
-        toast.error(`Error looking up username: ${profileError.message}`);
-        throw new Error(`Error looking up username: ${profileError.message}`);
-      }
-      
-      if (!profileData || profileData.length === 0) {
-        console.error("No profile found for username:", username);
-        toast.error(`User not found. Please check your username.`);
-        throw new Error('User not found');
-      }
-      
-      if (profileData[0].hashpasswd !== hashedPassword) {
-        console.error("Password does not match for user:", username);
-        toast.error('Invalid password. Please try again.');
-        throw new Error('Invalid password');
-      }
-      
-      const mockUser = {
-        id: profileData[0].id,
-        email: profileData[0].email || '',
-        user_metadata: {
-          username: username
-        }
-      } as unknown as User;
-      
-      setUser(mockUser);
-      
-      localStorage.setItem('directAuthUser', JSON.stringify({
-        id: profileData[0].id,
-        username: username,
-        email: profileData[0].email
-      }));
-      
-      toast.success("Logged in successfully!");
+      const mockUser = await signInDirectService(username, hashedPassword);
+      setUser(mockUser as User);
     } catch (error) {
       console.error("Error during direct sign in:", error);
       throw error;
@@ -156,33 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, username: string) => {
     try {
-      const { data: existingUser, error: usernameCheckError } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('username', username)
-        .single();
-      
-      if (existingUser) {
-        toast.error('Username is already taken. Please choose another one.');
-        throw new Error('Username already taken');
-      }
-      
-      const { error } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          data: {
-            username
-          }
-        }
-      });
-      
-      if (error) {
-        toast.error(`Registration failed: ${error.message}`);
-        throw error;
-      }
-      
-      toast.success("Registration successful! Please check your email for confirmation.");
+      await signUpWithSupabase(email, password, username);
       navigate('/login');
     } catch (error) {
       console.error("Error during sign up:", error);
@@ -192,16 +73,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      localStorage.removeItem('directAuthUser');
-      
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        toast.error(`Sign out failed: ${error.message}`);
-        throw error;
-      }
-      
-      toast.success("Signed out successfully");
+      await signOutUser();
+      setUser(null);
+      setSession(null);
       navigate('/login');
     } catch (error) {
       console.error("Error during sign out:", error);
@@ -211,37 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const createAdminUser = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            username: 'admin',
-            role: 'admin'
-          }
-        }
-      });
-
-      if (error) {
-        toast.error(`Admin creation failed: ${error.message}`);
-        throw error;
-      }
-
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            username: 'admin'
-          });
-
-        if (profileError) {
-          toast.error(`Admin profile creation failed: ${profileError.message}`);
-          throw profileError;
-        }
-      }
-      
-      toast.success("Admin user created successfully!");
+      await createAdmin(email, password);
     } catch (error) {
       console.error("Error creating admin user:", error);
       throw error;
@@ -250,16 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const resetPassword = async (email: string) => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`
-      });
-
-      if (error) {
-        toast.error(`Password reset failed: ${error.message}`);
-        throw error;
-      }
-
-      toast.success('Password reset email sent. Please check your inbox.');
+      await resetUserPassword(email);
     } catch (error) {
       console.error("Error during password reset:", error);
       throw error;
