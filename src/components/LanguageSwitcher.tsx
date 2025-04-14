@@ -1,23 +1,27 @@
 
 import React from 'react';
-import { useTranslation, Language } from '@/contexts/TranslationContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { Button } from '@/components/ui/button';
 
-const LanguageSwitcher: React.FC = () => {
-  const { language, setLanguage } = useTranslation();
+interface LanguageSwitcherProps {
+  className?: string;
+}
 
+const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ className }) => {
+  const { currentLanguage, setLanguage } = useTranslation();
+  
   const toggleLanguage = () => {
-    setLanguage(language === 'en' ? 'fr' : 'en');
+    setLanguage(currentLanguage === 'en' ? 'fr' : 'en');
   };
-
+  
   return (
     <Button 
-      variant="outline" 
-      size="sm" 
       onClick={toggleLanguage}
-      className="fixed top-4 right-4 z-20 border-game-secondary text-game-text"
+      variant="outline" 
+      size="sm"
+      className={`bg-game-background text-game-text hover:bg-game-primary hover:text-white text-xs md:text-sm p-1 md:p-2 h-auto ${className || ''}`}
     >
-      {language === 'en' ? 'FR' : 'EN'}
+      {currentLanguage === 'en' ? 'Français' : 'English'}
     </Button>
   );
 };

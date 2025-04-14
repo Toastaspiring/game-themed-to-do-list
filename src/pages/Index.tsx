@@ -37,7 +37,7 @@ const Index: React.FC = () => {
   if (!user) {
     return (
       <div className="min-h-screen bg-game-background text-game-text flex items-center justify-center px-4">
-        <LanguageSwitcher />
+        <LanguageSwitcher className="absolute top-4 right-4" />
         <div className="w-full max-w-md">
           <NamePrompt />
         </div>
@@ -47,24 +47,24 @@ const Index: React.FC = () => {
 
   return (
     <TaskProvider>
-      <div className="min-h-screen bg-game-background text-game-text">
-        <LanguageSwitcher />
+      <div className="min-h-screen bg-game-background text-game-text pb-20">
+        <LanguageSwitcher className="absolute top-2 right-2 md:top-4 md:right-4 z-20" />
         <Navigation />
         <Header />
         
-        <main className="max-w-4xl mx-auto px-4 pb-16">
+        <main className="max-w-4xl mx-auto px-3 md:px-4 pb-16">
           <div className="animate-pixel-fade-in">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-game-accent">{t('tasks')}</h2>
+            <div className="flex justify-between items-center mb-4 gap-2">
+              <h2 className="text-lg md:text-xl font-bold text-game-accent">{t('tasks')}</h2>
               
               <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
                 <DialogTrigger asChild>
-                  <Button className="pixel-button">
-                    <PlusCircle className="mr-2 h-4 w-4" />
+                  <Button className="pixel-button text-xs md:text-sm whitespace-nowrap">
+                    <PlusCircle className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
                     {t('addTask')}
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[600px] bg-game-background border-2 border-game-primary">
+                <DialogContent className="sm:max-w-[600px] bg-game-background border-2 border-game-primary w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="text-lg font-bold text-game-accent">
                       {t('addNewTask')}
