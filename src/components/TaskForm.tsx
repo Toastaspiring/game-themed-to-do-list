@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import { toast } from 'sonner';
 import { TaskFormProps, taskSchema, TaskFormValues, TaskTheme } from './task/task-schema';
 import { 
@@ -19,7 +19,7 @@ import LocationTracker, { getCurrentLocation } from './task/LocationTracker';
 
 const TaskForm: React.FC<TaskFormProps> = ({ onTaskAdded }) => {
   const { addTask } = useTaskContext();
-  const { user } = useAuth();
+  const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<TaskFormValues>({

@@ -2,12 +2,10 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Trophy, Home } from 'lucide-react';
-import { useTranslation } from '@/contexts/TranslationContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const Navigation: React.FC = () => {
   const location = useLocation();
-  const { t } = useTranslation();
   const isMobile = useIsMobile();
   
   return (
@@ -20,7 +18,7 @@ const Navigation: React.FC = () => {
           } hover:text-game-accent transition-colors`}
         >
           <Home size={isMobile ? 18 : 20} />
-          <span className="mt-1">{t('home')}</span>
+          <span className="mt-1">Home</span>
         </Link>
         
         <Link 
@@ -30,7 +28,7 @@ const Navigation: React.FC = () => {
           } hover:text-game-accent transition-colors`}
         >
           <Trophy size={isMobile ? 18 : 20} />
-          <span className="mt-1">{t('achievements')}</span>
+          <span className="mt-1">Achievements</span>
         </Link>
       </div>
     </nav>

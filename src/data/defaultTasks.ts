@@ -1,3 +1,4 @@
+
 export interface Task {
   id: string;
   title: string;
@@ -20,52 +21,12 @@ export interface Task {
 export const defaultTasks: Task[] = [
   {
     id: 'task-1',
-    title: 'Morning Exercise',
-    completed: false,
-    category: 'daily',
-    createdAt: new Date().toISOString(),
-    streak: 0,
-    icon: 'dumbbell',
-    theme: 'health'
-  },
-  {
-    id: 'task-2',
-    title: 'Read for 20 minutes',
-    completed: false,
-    category: 'daily',
-    createdAt: new Date().toISOString(),
-    streak: 0,
-    icon: 'book',
-    theme: 'reading'
-  },
-  {
-    id: 'task-3',
-    title: 'Drink 8 glasses of water',
-    completed: false,
-    category: 'daily',
-    createdAt: new Date().toISOString(),
-    streak: 0,
-    icon: 'glass-water',
-    theme: 'health'
-  },
-  {
-    id: 'task-4',
-    title: 'Learn something new',
+    title: 'Set your first goal',
     completed: false,
     category: 'goal',
     createdAt: new Date().toISOString(),
-    icon: 'lightbulb',
-    theme: 'learning',
+    icon: 'target',
+    theme: 'productivity',
     isMilestone: true
-  },
-  {
-    id: 'task-5',
-    title: 'Meditate for 10 minutes',
-    completed: false,
-    category: 'daily',
-    createdAt: new Date().toISOString(),
-    streak: 0,
-    icon: 'brain',
-    theme: 'mindfulness'
   }
 ];

@@ -4,9 +4,11 @@ import { useTaskContext } from '@/contexts/TaskContext';
 import { Trophy } from 'lucide-react';
 import StreakCounter from './StreakCounter';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useUser } from '@/contexts/UserContext';
 
 const Header: React.FC = () => {
   const { achievements } = useTaskContext();
+  const { user } = useUser();
   const isMobile = useIsMobile();
   const unlockedAchievements = achievements.filter(a => a.unlocked).length;
   const totalAchievements = achievements.length;
@@ -16,8 +18,9 @@ const Header: React.FC = () => {
       <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between">
         <div className="flex items-center mb-3 md:mb-0">
           <h1 className="text-lg md:text-2xl font-bold text-white tracking-wider animate-pixel-bounce">
-            Nostalgia Achievements
+            TaskMaster
           </h1>
+          <span className="ml-2 md:ml-4 text-white text-sm md:text-base">Hello, {user?.name || 'User'}!</span>
         </div>
         <div className="flex items-center gap-3 md:gap-4">
           <div className="flex items-center bg-game-background px-2 md:px-3 py-1 rounded-md pixel-border border-game-accent">
