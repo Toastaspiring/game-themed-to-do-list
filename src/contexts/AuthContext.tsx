@@ -10,6 +10,8 @@ interface AuthContextType {
   loading: boolean;
   setUserName: (name: string) => void;
   logoutUser: () => void;
+  loginUser: (username: string, password: string) => Promise<void>;
+  registerUser: (username: string, email: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -38,8 +40,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('user');
   };
 
+  const loginUser = async (username: string, password: string) => {
+    // Since we're using local storage only, this is a simplified version
+    // that just sets the user's name from the username
+    setUserName(username);
+  };
+
+  const registerUser = async (username: string, email: string, password: string) => {
+    // Simple registration that just sets the user's name
+    setUserName(username);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, setUserName, logoutUser }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      setUserName, 
+      logoutUser,
+      loginUser,
+      registerUser
+    }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import bcrypt from 'bcryptjs';
 
@@ -28,7 +29,7 @@ export const login = async (identifier: string, password: string) => {
   if (!users || users.length === 0) throw new Error('User not found');
 
   const user = users[0];
-  const isMatch = await bcrypt.compare(password, user.hashpassword);
+  const isMatch = await bcrypt.compare(password, user.hashpasswd);
 
   if (!isMatch) throw new Error('Invalid password');
 

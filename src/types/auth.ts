@@ -2,7 +2,7 @@
 import { Session, User } from '@supabase/supabase-js';
 
 export interface AuthContextType {
-  user: User | null;
+  user: { name: string } | null;
   session: Session | null;
   loading: boolean;
   signIn: (identifier: string, password: string) => Promise<void>;
@@ -11,6 +11,10 @@ export interface AuthContextType {
   signOut: () => Promise<void>;
   createAdminUser: (email: string, password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  loginUser: (username: string, password: string) => Promise<void>;
+  registerUser: (username: string, email: string, password: string) => Promise<void>;
+  setUserName: (name: string) => void;
+  logoutUser: () => void;
 }
 
 export interface UserProfile {
