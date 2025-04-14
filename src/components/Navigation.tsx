@@ -3,11 +3,13 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Trophy, Home, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { toast } from 'sonner';
 
 const Navigation: React.FC = () => {
   const location = useLocation();
   const { user, logoutUser } = useAuth();
+  const { t } = useTranslation();
   
   // Don't show navigation on login or register pages
   if (location.pathname === '/login' || location.pathname === '/register') {
@@ -29,7 +31,7 @@ const Navigation: React.FC = () => {
           } hover:text-game-accent transition-colors`}
         >
           <Home size={20} />
-          <span className="mt-1">Home</span>
+          <span className="mt-1">{t('home')}</span>
         </Link>
         
         <Link 
@@ -39,7 +41,7 @@ const Navigation: React.FC = () => {
           } hover:text-game-accent transition-colors`}
         >
           <Trophy size={20} />
-          <span className="mt-1">Achievements</span>
+          <span className="mt-1">{t('achievements')}</span>
         </Link>
 
         {user && (
@@ -48,7 +50,7 @@ const Navigation: React.FC = () => {
             className="flex flex-col items-center text-sm text-game-text hover:text-game-accent transition-colors"
           >
             <LogOut size={20} />
-            <span className="mt-1">Sign Out</span>
+            <span className="mt-1">{t('signOut')}</span>
           </button>
         )}
       </div>

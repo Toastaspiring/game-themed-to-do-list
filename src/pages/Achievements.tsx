@@ -4,11 +4,16 @@ import { TaskProvider } from '@/contexts/TaskContext';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import AchievementList from '@/components/AchievementList';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 const Achievements: React.FC = () => {
+  const { t } = useTranslation();
+  
   return (
     <div className="min-h-screen bg-game-background text-game-text">
       <TaskProvider>
+        <LanguageSwitcher />
         <Navigation />
         <Header />
         
@@ -19,7 +24,7 @@ const Achievements: React.FC = () => {
         </main>
         
         <footer className="text-center py-4 text-xs text-game-text-muted">
-          <p>Nostalgic Achievement Gardens &copy; {new Date().getFullYear()}</p>
+          <p>{t('copyright')} {new Date().getFullYear()}</p>
         </footer>
       </TaskProvider>
     </div>
