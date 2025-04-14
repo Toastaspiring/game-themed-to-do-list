@@ -5,16 +5,14 @@ interface User {
   name: string;
 }
 
-interface AuthContextType {
+interface UserContextType {
   user: User | null;
   loading: boolean;
   setUserName: (name: string) => void;
-  logoutUser: () => void;
-  loginUser: (username: string, password: string) => Promise<void>;
-  registerUser: (username: string, email: string, password: string) => Promise<void>;
+  clearUser: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const UserContext = createContext<UserContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -35,38 +33,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('user', JSON.stringify(newUser));
   };
 
-  const logoutUser = () => {
+  const clearUser = () => {
     setUser(null);
     localStorage.removeItem('user');
   };
 
-  const loginUser = async (username: string, password: string) => {
-    // Since we're using local storage only, this is a simplified version
-    // that just sets the user's name from the username
-    setUserName(username);
-  };
-
-  const registerUser = async (username: string, email: string, password: string) => {
-    // Simple registration that just sets the user's name
-    setUserName(username);
-  };
-
   return (
-    <AuthContext.Provider value={{ 
+    <UserContext.Provider value={{ 
       user, 
       loading, 
       setUserName, 
-      logoutUser,
-      loginUser,
-      registerUser
+      clearUser
     }}>
       {children}
-    </AuthContext.Provider>
+    </UserContext.Provider>
   );
 };
 
 export const useAuth = () => {
-  const ctx = useContext(AuthContext);
+  const ctx = useContext(UserContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 };

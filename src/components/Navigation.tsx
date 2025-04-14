@@ -1,25 +1,12 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Trophy, Home, LogOut } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { Trophy, Home } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { toast } from 'sonner';
 
 const Navigation: React.FC = () => {
   const location = useLocation();
-  const { user, logoutUser } = useAuth();
   const { t } = useTranslation();
-  
-  // Don't show navigation on login or register pages
-  if (location.pathname === '/login' || location.pathname === '/register') {
-    return null;
-  }
-
-  const handleLogout = () => {
-    logoutUser();
-    toast.success('You have been logged out');
-  };
   
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-game-primary p-4 z-10 shadow-lg border-t-2 border-game-secondary">
@@ -43,16 +30,6 @@ const Navigation: React.FC = () => {
           <Trophy size={20} />
           <span className="mt-1">{t('achievements')}</span>
         </Link>
-
-        {user && (
-          <button
-            onClick={handleLogout}
-            className="flex flex-col items-center text-sm text-game-text hover:text-game-accent transition-colors"
-          >
-            <LogOut size={20} />
-            <span className="mt-1">{t('signOut')}</span>
-          </button>
-        )}
       </div>
     </nav>
   );
