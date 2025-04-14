@@ -8,10 +8,10 @@ interface LanguageSwitcherProps {
 }
 
 const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ className }) => {
-  const { currentLanguage, setLanguage } = useTranslation();
+  const { language, setLanguage } = useTranslation();
   
   const toggleLanguage = () => {
-    setLanguage(currentLanguage === 'en' ? 'fr' : 'en');
+    setLanguage(language === 'en' ? 'fr' : 'en');
   };
   
   return (
@@ -21,7 +21,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ className }) => {
       size="sm"
       className={`bg-game-background text-game-text hover:bg-game-primary hover:text-white text-xs md:text-sm p-1 md:p-2 h-auto ${className || ''}`}
     >
-      {currentLanguage === 'en' ? 'Français' : 'English'}
+      {language === 'en' ? 'Français' : 'English'}
     </Button>
   );
 };
