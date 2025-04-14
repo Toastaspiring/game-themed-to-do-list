@@ -1,33 +1,45 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import * as authService from '@/services/authService';
 
-const AuthContext = createContext(null);
+interface User {
+  name: string;
+}
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  setUserName: (name: string) => void;
+  logoutUser: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) setUser(JSON.parse(stored));
+    // Check if user exists in localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setLoading(false);
   }, []);
 
-  const loginUser = async (identifier, password) => {
-    const user = await authService.login(identifier, password);
-    setUser(user);
-  };
-
-  const registerUser = async (email, username, password) => {
-    await authService.register(email, username, password);
+  const setUserName = (name: string) => {
+    const newUser = { name };
+    setUser(newUser);
+    localStorage.setItem('user', JSON.stringify(newUser));
   };
 
   const logoutUser = () => {
-    authService.logout();
     setUser(null);
+    localStorage.removeItem('user');
   };
 
   return (
-    <AuthContext.Provider value={{ user, loginUser, registerUser, logoutUser }}>
+    <AuthContext.Provider value={{ user, loading, setUserName, logoutUser }}>
       {children}
     </AuthContext.Provider>
   );

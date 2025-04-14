@@ -1,17 +1,23 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Trophy, Home, LogOut, LogIn, UserPlus, Users } from 'lucide-react';
+import { Trophy, Home, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const Navigation: React.FC = () => {
   const location = useLocation();
-  const { user, signOut } = useAuth();
+  const { user, logoutUser } = useAuth();
   
   // Don't show navigation on login or register pages
   if (location.pathname === '/login' || location.pathname === '/register') {
     return null;
   }
+
+  const handleLogout = () => {
+    logoutUser();
+    toast.success('You have been logged out');
+  };
   
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-game-primary p-4 z-10 shadow-lg border-t-2 border-game-secondary">
@@ -37,47 +43,13 @@ const Navigation: React.FC = () => {
         </Link>
 
         {user && (
-          <Link 
-            to="/admin/profiles" 
-            className={`flex flex-col items-center text-sm ${
-              location.pathname === '/admin/profiles' ? 'text-game-accent' : 'text-game-text'
-            } hover:text-game-accent transition-colors`}
-          >
-            <Users size={20} />
-            <span className="mt-1">Profiles</span>
-          </Link>
-        )}
-        
-        {user ? (
           <button
-            onClick={() => signOut()}
+            onClick={handleLogout}
             className="flex flex-col items-center text-sm text-game-text hover:text-game-accent transition-colors"
           >
             <LogOut size={20} />
             <span className="mt-1">Sign Out</span>
           </button>
-        ) : (
-          <>
-            <Link 
-              to="/login" 
-              className={`flex flex-col items-center text-sm ${
-                location.pathname === '/login' ? 'text-game-accent' : 'text-game-text'
-              } hover:text-game-accent transition-colors`}
-            >
-              <LogIn size={20} />
-              <span className="mt-1">Login</span>
-            </Link>
-            
-            <Link 
-              to="/register" 
-              className={`flex flex-col items-center text-sm ${
-                location.pathname === '/register' ? 'text-game-accent' : 'text-game-text'
-              } hover:text-game-accent transition-colors`}
-            >
-              <UserPlus size={20} />
-              <span className="mt-1">Register</span>
-            </Link>
-          </>
         )}
       </div>
     </nav>

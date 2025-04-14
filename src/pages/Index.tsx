@@ -1,14 +1,14 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { TaskProvider } from '@/contexts/TaskContext';
 import Header from '@/components/Header';
 import TaskList from '@/components/TaskList';
 import TaskForm from '@/components/TaskForm';
 import Navigation from '@/components/Navigation';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
+import NamePrompt from '@/components/NamePrompt';
 import { 
   Dialog,
   DialogContent,
@@ -18,16 +18,8 @@ import {
 } from '@/components/ui/dialog';
 
 const Index: React.FC = () => {
-  const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
-
-  useEffect(() => {
-    // If not loading and not logged in, redirect to login
-    if (!loading && !user) {
-      navigate('/login');
-    }
-  }, [user, loading, navigate]);
+  const [isTaskFormOpen, setIsTaskFormOpen] = React.useState(false);
 
   // Show minimal content while checking auth state
   if (loading) {
@@ -38,9 +30,15 @@ const Index: React.FC = () => {
     );
   }
 
-  // Only show main content if logged in
+  // Show name prompt if no user is set
   if (!user) {
-    return null; // Will redirect in useEffect
+    return (
+      <div className="min-h-screen bg-game-background text-game-text flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <NamePrompt />
+        </div>
+      </div>
+    );
   }
 
   return (

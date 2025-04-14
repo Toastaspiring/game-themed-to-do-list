@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { TaskFormProps, taskSchema, TaskFormValues, TaskTheme } from './task/task-schema';
 import { 
@@ -36,7 +35,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskAdded }) => {
 
   const onSubmit = async (values: TaskFormValues) => {
     if (!user) {
-      toast.error("Please log in to add tasks");
+      toast.error("Please enter your name to add tasks");
       return;
     }
 
@@ -51,24 +50,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskAdded }) => {
         icon: values.icon,
         theme: values.theme as TaskTheme,
         isMilestone: values.isMilestone,
-        location: userLocation || undefined
+        location: userLocation || undefined,
+        userId: user.name,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString()
       };
-
-      if (user) {
-        const { error } = await supabase
-          .from('tasks')
-          .insert({
-            title: newTask.title,
-            category: newTask.category,
-            icon: newTask.icon,
-            user_id: user.id,
-            theme: newTask.theme,
-            is_milestone: newTask.isMilestone,
-            location: newTask.location
-          });
-
-        if (error) throw error;
-      }
 
       addTask(newTask);
       
